@@ -1,65 +1,89 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Search, Filter, Building, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
-import axios from 'axios'
-
-const API_URL = 'http://localhost:5000/api'
+import { departmentAPI, positionAPI } from '@/services/api'  // Import API service
 
 const DepartmentManagement = () => {
   const [activeTab, setActiveTab] = useState('departments')
   const [departments, setDepartments] = useState([])
   const [positions, setPositions] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState('create')
   const [selectedItem, setSelectedItem] = useState(null)
   const [formData, setFormData] = useState({
-    department_code: '',
-    department_name: '',
+    code: '',
+    name: '',
     description: '',
-    parent_department_id: null,
-    manager_id: null
+    status: 'active'
   })
 
-  // Fetch dữ liệu từ backend
+  // Load dữ liệu khi component mount
   useEffect(() => {
-    fetchDepartments()
-    fetchPositions()
+    loadData()
   }, [])
 
-  const fetchDepartments = () => {
-    axios.get(`${API_URL}/departments`)
-      .then(res => setDepartments(res.data))
-      .catch(() => toast.error('Không tải được danh sách phòng ban'))
+  // Load dữ liệu từ API
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      await Promise.all([
+        loadDepartments(),
+        loadPositions()
+      ])
+    } catch (error) {
+      console.error('Error loading data:', error)
+      toast.error('Không thể tải dữ liệu')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const fetchPositions = () => {
-    axios.get(`${API_URL}/positions`)
-      .then(res => setPositions(res.data))
-      .catch(() => toast.error('Không tải được danh sách chức vụ'))
+  const loadDepartments = async () => {
+    try {
+      const response = await departmentAPI.getAll()
+      console.log('Departments loaded:', response.data)
+      setDepartments(response.data || [])
+    } catch (error) {
+      console.error('Error loading departments:', error)
+      toast.error(error.message)
+    }
+  }
+
+  const loadPositions = async () => {
+    try {
+      const response = await positionAPI.getAll()
+      console.log('Positions loaded:', response.data)
+      setPositions(response.data || [])
+    } catch (error) {
+      console.error('Error loading positions:', error)
+      toast.error(error.message)
+    }
   }
 
   // Bộ lọc tìm kiếm
   const filteredDepartments = departments.filter(dept =>
-    dept.department_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    dept.department_code.toLowerCase().includes(searchTerm.toLowerCase())
+    (dept.name && dept.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (dept.code && dept.code.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const filteredPositions = positions.filter(pos =>
-    pos.position_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pos.position_code.toLowerCase().includes(searchTerm.toLowerCase())
+    (pos.title && pos.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (pos.code && pos.code.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
-  // CRUD
+  // CRUD operations
   const handleCreate = () => {
     setModalType('create')
     setSelectedItem(null)
     setFormData({
-      department_code: '',
-      department_name: '',
+      code: '',
+      name: activeTab === 'departments' ? '' : undefined,
+      title: activeTab === 'positions' ? '' : undefined,
       description: '',
-      parent_department_id: null,
-      manager_id: null
+      status: 'active',
+      department_id: activeTab === 'positions' ? '' : undefined
     })
     setShowModal(true)
   }
@@ -67,157 +91,191 @@ const DepartmentManagement = () => {
   const handleEdit = (item) => {
     setModalType('edit')
     setSelectedItem(item)
-    setFormData(item)
+    if (activeTab === 'departments') {
+      setFormData({
+        code: item.code || '',
+        name: item.name || '',
+        description: item.description || '',
+        status: item.status || 'active'
+      })
+    } else {
+      setFormData({
+        code: item.code || '',
+        title: item.title || '',
+        description: item.description || '',
+        status: item.status || 'active',
+        department_id: item.department_id || ''
+      })
+    }
     setShowModal(true)
   }
 
-  const handleDelete = (item) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${item.department_name || item.position_name}?`)) return
+  const handleDelete = async (item) => {
+    const itemName = item.name || item.title
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${itemName}?`)) return
 
-    if (activeTab === 'departments') {
-      axios.delete(`${API_URL}/departments/${item.id}`)
-        .then(() => {
-          toast.success('Xóa phòng ban thành công!')
-          fetchDepartments()
-        })
-        .catch(() => toast.error('Lỗi khi xóa phòng ban'))
-    } else {
-      axios.delete(`${API_URL}/positions/${item.id}`)
-        .then(() => {
-          toast.success('Xóa chức vụ thành công!')
-          fetchPositions()
-        })
-        .catch(() => toast.error('Lỗi khi xóa chức vụ'))
+    try {
+      if (activeTab === 'departments') {
+        await departmentAPI.delete(item.id)
+        toast.success('Xóa phòng ban thành công!')
+        loadDepartments()
+      } else {
+        await positionAPI.delete(item.id)
+        toast.success('Xóa chức vụ thành công!')
+        loadPositions()
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error(error.message)
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (activeTab === 'departments') {
-      if (modalType === 'create') {
-        axios.post(`${API_URL}/departments`, formData)
-          .then(() => {
-            toast.success('Tạo phòng ban thành công!')
-            fetchDepartments()
-            setShowModal(false)
-          })
-          .catch(() => toast.error('Lỗi khi tạo phòng ban'))
+    try {
+      if (activeTab === 'departments') {
+        if (modalType === 'create') {
+          await departmentAPI.create(formData)
+          toast.success('Tạo phòng ban thành công!')
+        } else {
+          await departmentAPI.update(selectedItem.id, formData)
+          toast.success('Cập nhật phòng ban thành công!')
+        }
+        loadDepartments()
       } else {
-        axios.put(`${API_URL}/departments/${selectedItem.id}`, formData)
-          .then(() => {
-            toast.success('Cập nhật phòng ban thành công!')
-            fetchDepartments()
-            setShowModal(false)
-          })
-          .catch(() => toast.error('Lỗi khi cập nhật phòng ban'))
+        if (modalType === 'create') {
+          await positionAPI.create(formData)
+          toast.success('Tạo chức vụ thành công!')
+        } else {
+          await positionAPI.update(selectedItem.id, formData)
+          toast.success('Cập nhật chức vụ thành công!')
+        }
+        loadPositions()
       }
-    } else {
-      if (modalType === 'create') {
-        axios.post(`${API_URL}/positions`, formData)
-          .then(() => {
-            toast.success('Tạo chức vụ thành công!')
-            fetchPositions()
-            setShowModal(false)
-          })
-          .catch(() => toast.error('Lỗi khi tạo chức vụ'))
-      } else {
-        axios.put(`${API_URL}/positions/${selectedItem.id}`, formData)
-          .then(() => {
-            toast.success('Cập nhật chức vụ thành công!')
-            fetchPositions()
-            setShowModal(false)
-          })
-          .catch(() => toast.error('Lỗi khi cập nhật chức vụ'))
-      }
+      setShowModal(false)
+    } catch (error) {
+      console.error('Submit error:', error)
+      toast.error(error.message)
     }
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    )
   }
 
   // Bảng hiển thị phòng ban
   const DepartmentTable = () => (
     <div className="bg-white shadow overflow-hidden sm:rounded-md">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="table-header">Mã phòng ban</th>
-            <th className="table-header">Tên phòng ban</th>
-            <th className="table-header">Mô tả</th>
-            <th className="table-header">Trưởng phòng</th>
-            <th className="table-header">Trạng thái</th>
-            <th className="table-header">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {filteredDepartments.map((dept) => (
-            <tr key={dept.id} className="hover:bg-gray-50">
-              <td className="table-cell font-medium text-blue-600">{dept.department_code}</td>
-              <td className="table-cell">{dept.department_name}</td>
-              <td className="table-cell max-w-xs truncate">{dept.description}</td>
-              <td className="table-cell">{dept.manager_name || 'Chưa có'}</td>
-              <td className="table-cell">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  dept.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {dept.is_active ? 'Hoạt động' : 'Không hoạt động'}
-                </span>
-              </td>
-              <td className="table-cell">
-                <div className="flex space-x-2">
-                  <button onClick={() => handleEdit(dept)} className="text-blue-600 hover:text-blue-900">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDelete(dept)} className="text-red-600 hover:text-red-900">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </td>
+      {filteredDepartments.length === 0 ? (
+        <div className="text-center py-12">
+          <Building className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Không có dữ liệu</h3>
+          <p className="text-gray-500">Chưa có phòng ban nào hoặc không có kết quả tìm kiếm.</p>
+        </div>
+      ) : (
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="table-header">Mã phòng ban</th>
+              <th className="table-header">Tên phòng ban</th>
+              <th className="table-header">Mô tả</th>
+              <th className="table-header">Trạng thái</th>
+              <th className="table-header">Thao tác</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredDepartments.map((dept) => (
+              <tr key={dept.id} className="hover:bg-gray-50">
+                <td className="table-cell font-medium text-blue-600">{dept.code}</td>
+                <td className="table-cell">{dept.name}</td>
+                <td className="table-cell max-w-xs truncate">{dept.description || 'Chưa có mô tả'}</td>
+                <td className="table-cell">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    dept.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {dept.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+                  </span>
+                </td>
+                <td className="table-cell">
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => handleEdit(dept)} 
+                      className="text-blue-600 hover:text-blue-900"
+                      title="Chỉnh sửa"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(dept)} 
+                      className="text-red-600 hover:text-red-900"
+                      title="Xóa"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 
   // Bảng hiển thị chức vụ
   const PositionTable = () => (
     <div className="bg-white shadow overflow-hidden sm:rounded-md">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="table-header">Mã chức vụ</th>
-            <th className="table-header">Tên chức vụ</th>
-            <th className="table-header">Cấp bậc</th>
-            <th className="table-header">Phòng ban</th>
-            <th className="table-header">Mô tả</th>
-            <th className="table-header">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {filteredPositions.map((pos) => (
-            <tr key={pos.id} className="hover:bg-gray-50">
-              <td className="table-cell font-medium text-blue-600">{pos.position_code}</td>
-              <td className="table-cell">{pos.position_name}</td>
-              <td className="table-cell">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  Cấp {pos.level}
-                </span>
-              </td>
-              <td className="table-cell">{pos.department_name}</td>
-              <td className="table-cell max-w-xs truncate">{pos.description}</td>
-              <td className="table-cell">
-                <div className="flex space-x-2">
-                  <button onClick={() => handleEdit(pos)} className="text-blue-600 hover:text-blue-900">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDelete(pos)} className="text-red-600 hover:text-red-900">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </td>
+      {filteredPositions.length === 0 ? (
+        <div className="text-center py-12">
+          <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Không có dữ liệu</h3>
+          <p className="text-gray-500">Chưa có chức vụ nào hoặc không có kết quả tìm kiếm.</p>
+        </div>
+      ) : (
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="table-header">Tên chức vụ</th>
+              <th className="table-header">Phòng ban</th>
+              <th className="table-header">Mô tả</th>
+              <th className="table-header">Thao tác</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredPositions.map((pos) => (
+              <tr key={pos.id} className="hover:bg-gray-50">
+                <td className="table-cell font-medium text-blue-600">{pos.title}</td>
+                <td className="table-cell">{pos.Department?.name || 'Chưa có'}</td>
+                <td className="table-cell max-w-xs truncate">{pos.description || 'Chưa có mô tả'}</td>
+                <td className="table-cell">
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => handleEdit(pos)} 
+                      className="text-blue-600 hover:text-blue-900"
+                      title="Chỉnh sửa"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(pos)} 
+                      className="text-red-600 hover:text-red-900"
+                      title="Xóa"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 
@@ -229,10 +287,40 @@ const DepartmentManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Quản lý cơ cấu tổ chức</h1>
           <p className="text-gray-600 mt-2">Quản lý phòng ban và chức vụ trong tổ chức</p>
         </div>
-        <button onClick={handleCreate} className="btn-primary flex items-center space-x-2">
+        <button 
+          onClick={handleCreate} 
+          className="btn-primary flex items-center space-x-2"
+        >
           <Plus className="w-5 h-5" />
           <span>Thêm mới</span>
         </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="card">
+          <div className="flex items-center">
+            <div className="p-3 bg-blue-500 rounded-full">
+              <Building className="w-6 h-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Tổng phòng ban</p>
+              <p className="text-2xl font-bold text-gray-900">{departments.length}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card">
+          <div className="flex items-center">
+            <div className="p-3 bg-green-500 rounded-full">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Tổng chức vụ</p>
+              <p className="text-2xl font-bold text-gray-900">{positions.length}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -299,69 +387,52 @@ const DepartmentManagement = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã {activeTab === 'departments' ? 'phòng ban' : 'chức vụ'}
+                    Mã {activeTab === 'departments' ? 'phòng ban' : 'chức vụ'} *
                   </label>
                   <input
                     type="text"
-                    value={formData.department_code || formData.position_code || ''}
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      [activeTab === 'departments' ? 'department_code' : 'position_code']: e.target.value
-                    })}
+                    value={formData.code || ''}
+                    onChange={(e) => setFormData({...formData, code: e.target.value})}
                     className="input-field"
                     required
+                    placeholder="VD: IT, HR, DEV..."
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tên {activeTab === 'departments' ? 'phòng ban' : 'chức vụ'}
+                    Tên {activeTab === 'departments' ? 'phòng ban' : 'chức vụ'} *
                   </label>
                   <input
                     type="text"
-                    value={formData.department_name || formData.position_name || ''}
+                    value={activeTab === 'departments' ? formData.name || '' : formData.title || ''}
                     onChange={(e) => setFormData({
                       ...formData, 
-                      [activeTab === 'departments' ? 'department_name' : 'position_name']: e.target.value
+                      [activeTab === 'departments' ? 'name' : 'title']: e.target.value
                     })}
                     className="input-field"
                     required
+                    placeholder={`VD: ${activeTab === 'departments' ? 'Phòng Công nghệ thông tin' : 'Lập trình viên'}`}
                   />
                 </div>
 
                 {activeTab === 'positions' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Cấp bậc
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={formData.level || ''}
-                        onChange={(e) => setFormData({...formData, level: parseInt(e.target.value)})}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phòng ban
-                      </label>
-                      <select
-                        value={formData.department_id || ''}
-                        onChange={(e) => setFormData({...formData, department_id: parseInt(e.target.value)})}
-                        className="input-field"
-                        required
-                      >
-                        <option value="">Chọn phòng ban</option>
-                        {departments.map(dept => (
-                          <option key={dept.id} value={dept.id}>{dept.department_name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phòng ban *
+                    </label>
+                    <select
+                      value={formData.department_id || ''}
+                      onChange={(e) => setFormData({...formData, department_id: e.target.value})}
+                      className="input-field"
+                      required
+                    >
+                      <option value="">Chọn phòng ban</option>
+                      {departments.map(dept => (
+                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 )}
 
                 <div>
@@ -373,14 +444,36 @@ const DepartmentManagement = () => {
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     className="input-field"
                     rows="3"
+                    placeholder="Mô tả chi tiết..."
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Trạng thái
+                  </label>
+                  <select
+                    value={formData.status || 'active'}
+                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    className="input-field"
+                  >
+                    <option value="active">Hoạt động</option>
+                    <option value="inactive">Không hoạt động</option>
+                  </select>
+                </div>
+
                 <div className="flex justify-end space-x-3 pt-4">
-                  <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowModal(false)} 
+                    className="btn-secondary"
+                  >
                     Hủy
                   </button>
-                  <button type="submit" className="btn-primary">
+                  <button 
+                    type="submit" 
+                    className="btn-primary"
+                  >
                     {modalType === 'create' ? 'Tạo mới' : 'Cập nhật'}
                   </button>
                 </div>
