@@ -19,6 +19,8 @@ export default {
           800: '#1e40af',
           900: '#1e3a8a',
         },
+        background: '#ffffff',
+        foreground: '#1f2937',
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif'],

@@ -64,27 +64,38 @@ const DepartmentManagement = () => {
 
   // Bộ lọc tìm kiếm
   const filteredDepartments = departments.filter(dept =>
-    (dept.name && dept.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (dept.code && dept.code.toLowerCase().includes(searchTerm.toLowerCase()))
+    (dept.department_name && dept.department_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (dept.department_code && dept.department_code.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const filteredPositions = positions.filter(pos =>
-    (pos.title && pos.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (pos.code && pos.code.toLowerCase().includes(searchTerm.toLowerCase()))
+    (pos.position_name && pos.position_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (pos.position_code && pos.position_code.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   // CRUD operations
   const handleCreate = () => {
     setModalType('create')
     setSelectedItem(null)
-    setFormData({
-      code: '',
-      name: activeTab === 'departments' ? '' : undefined,
-      title: activeTab === 'positions' ? '' : undefined,
-      description: '',
-      status: 'active',
-      department_id: activeTab === 'positions' ? '' : undefined
-    })
+    if (activeTab === 'departments') {
+      setFormData({
+        department_code: '',
+        department_name: '',
+        description: '',
+        parent_department_id: '',
+        manager_id: '',
+        is_active: true
+      })
+    } else {
+      setFormData({
+        position_code: '',
+        position_name: '',
+        description: '',
+        level: 1,
+        department_id: '',
+        is_active: true
+      })
+    }
     setShowModal(true)
   }
 
@@ -93,25 +104,28 @@ const DepartmentManagement = () => {
     setSelectedItem(item)
     if (activeTab === 'departments') {
       setFormData({
-        code: item.code || '',
-        name: item.name || '',
+        department_code: item.department_code || '',
+        department_name: item.department_name || '',
         description: item.description || '',
-        status: item.status || 'active'
+        parent_department_id: item.parent_department_id || '',
+        manager_id: item.manager_id || '',
+        is_active: item.is_active !== undefined ? item.is_active : true
       })
     } else {
       setFormData({
-        code: item.code || '',
-        title: item.title || '',
+        position_code: item.position_code || '',
+        position_name: item.position_name || '',
         description: item.description || '',
-        status: item.status || 'active',
-        department_id: item.department_id || ''
+        level: item.level || 1,
+        department_id: item.department_id || '',
+        is_active: item.is_active !== undefined ? item.is_active : true
       })
     }
     setShowModal(true)
   }
 
   const handleDelete = async (item) => {
-    const itemName = item.name || item.title
+    const itemName = item.department_name || item.position_name
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${itemName}?`)) return
 
     try {
@@ -192,14 +206,14 @@ const DepartmentManagement = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredDepartments.map((dept) => (
               <tr key={dept.id} className="hover:bg-gray-50">
-                <td className="table-cell font-medium text-blue-600">{dept.code}</td>
-                <td className="table-cell">{dept.name}</td>
+                <td className="table-cell font-medium text-blue-600">{dept.department_code}</td>
+                <td className="table-cell">{dept.department_name}</td>
                 <td className="table-cell max-w-xs truncate">{dept.description || 'Chưa có mô tả'}</td>
                 <td className="table-cell">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    dept.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    dept.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {dept.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+                    {dept.is_active ? 'Hoạt động' : 'Không hoạt động'}
                   </span>
                 </td>
                 <td className="table-cell">
@@ -241,18 +255,30 @@ const DepartmentManagement = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="table-header">Mã chức vụ</th>
               <th className="table-header">Tên chức vụ</th>
+              <th className="table-header">Cấp độ</th>
               <th className="table-header">Phòng ban</th>
               <th className="table-header">Mô tả</th>
+              <th className="table-header">Trạng thái</th>
               <th className="table-header">Thao tác</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredPositions.map((pos) => (
               <tr key={pos.id} className="hover:bg-gray-50">
-                <td className="table-cell font-medium text-blue-600">{pos.title}</td>
-                <td className="table-cell">{pos.Department?.name || 'Chưa có'}</td>
+                <td className="table-cell font-medium text-blue-600">{pos.position_code}</td>
+                <td className="table-cell">{pos.position_name}</td>
+                <td className="table-cell">{pos.level}</td>
+                <td className="table-cell">{pos.Department?.department_name || 'Chưa có'}</td>
                 <td className="table-cell max-w-xs truncate">{pos.description || 'Chưa có mô tả'}</td>
+                <td className="table-cell">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    pos.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {pos.is_active ? 'Hoạt động' : 'Không hoạt động'}
+                  </span>
+                </td>
                 <td className="table-cell">
                   <div className="flex space-x-2">
                     <button 
@@ -391,8 +417,11 @@ const DepartmentManagement = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.code || ''}
-                    onChange={(e) => setFormData({...formData, code: e.target.value})}
+                    value={activeTab === 'departments' ? formData.department_code || '' : formData.position_code || ''}
+                    onChange={(e) => setFormData({
+                      ...formData, 
+                      [activeTab === 'departments' ? 'department_code' : 'position_code']: e.target.value
+                    })}
                     className="input-field"
                     required
                     placeholder="VD: IT, HR, DEV..."
@@ -405,10 +434,10 @@ const DepartmentManagement = () => {
                   </label>
                   <input
                     type="text"
-                    value={activeTab === 'departments' ? formData.name || '' : formData.title || ''}
+                    value={activeTab === 'departments' ? formData.department_name || '' : formData.position_name || ''}
                     onChange={(e) => setFormData({
                       ...formData, 
-                      [activeTab === 'departments' ? 'name' : 'title']: e.target.value
+                      [activeTab === 'departments' ? 'department_name' : 'position_name']: e.target.value
                     })}
                     className="input-field"
                     required
@@ -417,22 +446,40 @@ const DepartmentManagement = () => {
                 </div>
 
                 {activeTab === 'positions' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phòng ban *
-                    </label>
-                    <select
-                      value={formData.department_id || ''}
-                      onChange={(e) => setFormData({...formData, department_id: e.target.value})}
-                      className="input-field"
-                      required
-                    >
-                      <option value="">Chọn phòng ban</option>
-                      {departments.map(dept => (
-                        <option key={dept.id} value={dept.id}>{dept.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Cấp độ *
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.level || 1}
+                        onChange={(e) => setFormData({...formData, level: parseInt(e.target.value)})}
+                        className="input-field"
+                        min="1"
+                        max="10"
+                        required
+                        placeholder="1-10"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phòng ban *
+                      </label>
+                      <select
+                        value={formData.department_id || ''}
+                        onChange={(e) => setFormData({...formData, department_id: e.target.value})}
+                        className="input-field"
+                        required
+                      >
+                        <option value="">Chọn phòng ban</option>
+                        {departments.map(dept => (
+                          <option key={dept.id} value={dept.id}>{dept.department_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
                 )}
 
                 <div>
@@ -453,12 +500,12 @@ const DepartmentManagement = () => {
                     Trạng thái
                   </label>
                   <select
-                    value={formData.status || 'active'}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    value={formData.is_active ? 'true' : 'false'}
+                    onChange={(e) => setFormData({...formData, is_active: e.target.value === 'true'})}
                     className="input-field"
                   >
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Không hoạt động</option>
+                    <option value="true">Hoạt động</option>
+                    <option value="false">Không hoạt động</option>
                   </select>
                 </div>
 
