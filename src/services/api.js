@@ -297,6 +297,60 @@ export const courseAPI = {
   }
 }
 
+// COURSE CATEGORIES API
+export const courseCategoryAPI = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/course-categories')
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải danh mục học phần')
+    }
+  },
+
+  create: async (categoryData) => {
+    try {
+      const response = await api.post('/course-categories', categoryData)
+      return {
+        success: true,
+        message: 'Thêm danh mục học phần thành công',
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể thêm danh mục học phần')
+    }
+  },
+
+  update: async (id, categoryData) => {
+    try {
+      const response = await api.put(`/course-categories/${id}`, categoryData)
+      return {
+        success: true,
+        message: 'Cập nhật danh mục học phần thành công',
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật danh mục học phần')
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      await api.delete(`/course-categories/${id}`)
+      return {
+        success: true,
+        message: 'Xóa danh mục học phần thành công'
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể xóa danh mục học phần')
+    }
+  }
+}
+
+
 // HEALTH CHECK
 export const healthAPI = {
   check: async () => {

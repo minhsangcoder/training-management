@@ -288,23 +288,53 @@ const CourseCategory = sequelize.define("CourseCategory", {
 });
 
 const Course = sequelize.define("Course", {
+<<<<<<< HEAD
   code: { 
+=======
+  course_code: { 
+>>>>>>> 51bb7be (Cập nhật code mới)
     type: DataTypes.STRING(50), 
     allowNull: false, 
     unique: true 
   },
+<<<<<<< HEAD
   name: { 
+=======
+  course_name: { 
+>>>>>>> 51bb7be (Cập nhật code mới)
     type: DataTypes.STRING(255), 
     allowNull: false 
   },
   description: { 
     type: DataTypes.TEXT 
   },
+<<<<<<< HEAD
   duration_hours: {
     type: DataTypes.INTEGER
   },
   instructor: {
     type: DataTypes.STRING(255)
+=======
+  category_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  duration_hours: {
+    type: DataTypes.INTEGER
+  },
+  credits: {
+    type: DataTypes.INTEGER
+  },
+  level: {
+    type: DataTypes.STRING(50),
+    defaultValue: 'Beginner'
+  },
+  prerequisites: {
+    type: DataTypes.TEXT
+  },
+  learning_objectives: {
+    type: DataTypes.TEXT
+>>>>>>> 51bb7be (Cập nhật code mới)
   },
   status: {
     type: DataTypes.ENUM('draft', 'active', 'completed', 'cancelled'),
@@ -592,6 +622,61 @@ app.delete("/api/positions/:id", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
+=======
+app.post("/api/courses", async (req, res) => {
+  try {
+    let { 
+      course_code, course_name, description, category_id, 
+      duration_hours, credits, level, prerequisites, 
+      learning_objectives, created_by, is_active = true 
+    } = req.body;
+
+    if (!course_code || !course_name) {
+      return res.status(400).json({ error: "Mã học phần và tên học phần là bắt buộc" });
+    }
+
+    // Nếu frontend gửi "" thì convert thành null
+    if (category_id === "" || category_id === undefined) category_id = null;
+    if (created_by === "" || created_by === undefined) created_by = null;
+
+    const course = await Course.create({
+      course_code,
+      course_name,
+      description,
+      category_id,
+      duration_hours,
+      credits,
+      level,
+      prerequisites,
+      learning_objectives,
+      created_by,
+      is_active
+    });
+
+    res.status(201).json(course);
+  } catch (error) {
+    handleError(res, error, "Không thể thêm học phần");
+  }
+});
+
+app.get("/api/courses", async (req, res) => {
+  try {
+    const courses = await Course.findAll({
+      include: [
+        { model: CourseCategory, as: "CourseCategory", required: false, attributes: ["id", "category_name"] },
+        { model: Employee, as: "CreatedBy", required: false, attributes: ["id", "first_name", "last_name"] }
+      ],
+      order: [["created_at", "DESC"]]
+    });
+    res.json(courses);
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách học phần");
+  }
+});
+
+
+>>>>>>> 51bb7be (Cập nhật code mới)
 // Continue with other routes (employees, courses, etc.) following same pattern...
 // [Previous routes remain the same but with enhanced error handling]
 
