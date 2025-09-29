@@ -1,9 +1,8 @@
-// src/services/api.js - FIXED VERSION
+// src/services/api.js - UPDATED VERSION
 import axios from 'axios'
 
-// Sử dụng proxy thay vì direct URL
 const api = axios.create({
-  baseURL: '/api', // Dùng proxy từ vite.config.js
+  baseURL: '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -31,7 +30,6 @@ api.interceptors.response.use(
   (error) => {
     console.error('❌ API Error:', error.response?.data || error.message)
     
-    // Handle network errors
     if (!error.response) {
       console.error('🔴 Network Error - Backend server không chạy hoặc không kết nối được')
     }
@@ -40,28 +38,20 @@ api.interceptors.response.use(
   }
 )
 
-// DEPARTMENTS API - Fixed to match backend response
+// DEPARTMENTS API
 export const departmentAPI = {
-  // Lấy danh sách phòng ban
   getAll: async () => {
     try {
       const response = await api.get('/departments')
-      // Backend trả về array trực tiếp, không có wrapper
       return {
         success: true,
         data: response.data
       }
     } catch (error) {
-      console.error('Error in departmentAPI.getAll:', error)
-      throw new Error(
-        error.response?.data?.error || 
-        error.message || 
-        'Không thể tải danh sách phòng ban'
-      )
+      throw new Error(error.response?.data?.error || 'Không thể tải danh sách phòng ban')
     }
   },
 
-  // Thêm phòng ban mới
   create: async (departmentData) => {
     try {
       const response = await api.post('/departments', departmentData)
@@ -71,21 +61,13 @@ export const departmentAPI = {
         data: response.data
       }
     } catch (error) {
-      console.error('Error in departmentAPI.create:', error)
-      
-      // Xử lý lỗi Sequelize unique constraint
       if (error.response?.data?.error?.includes('Validation error')) {
         throw new Error('Mã phòng ban đã tồn tại')
       }
-      
-      throw new Error(
-        error.response?.data?.error || 
-        'Không thể thêm phòng ban'
-      )
+      throw new Error(error.response?.data?.error || 'Không thể thêm phòng ban')
     }
   },
 
-  // Cập nhật phòng ban
   update: async (id, departmentData) => {
     try {
       const response = await api.put(`/departments/${id}`, departmentData)
@@ -95,50 +77,24 @@ export const departmentAPI = {
         data: response.data
       }
     } catch (error) {
-      console.error('Error in departmentAPI.update:', error)
-      throw new Error(
-        error.response?.data?.error || 
-        'Không thể cập nhật phòng ban'
-      )
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật phòng ban')
     }
   },
 
-  // Xóa phòng ban
   delete: async (id) => {
     try {
-      const response = await api.delete(`/departments/${id}`)
+      await api.delete(`/departments/${id}`)
       return {
         success: true,
         message: 'Xóa phòng ban thành công'
       }
     } catch (error) {
-      console.error('Error in departmentAPI.delete:', error)
-      throw new Error(
-        error.response?.data?.error || 
-        'Không thể xóa phòng ban'
-      )
-    }
-  },
-
-  // Lấy phòng ban theo ID
-  getById: async (id) => {
-    try {
-      const response = await api.get(`/departments/${id}`)
-      return {
-        success: true,
-        data: response.data
-      }
-    } catch (error) {
-      console.error('Error in departmentAPI.getById:', error)
-      throw new Error(
-        error.response?.data?.error || 
-        'Không thể tải thông tin phòng ban'
-      )
+      throw new Error(error.response?.data?.error || 'Không thể xóa phòng ban')
     }
   }
 }
 
-// POSITIONS API - Fixed
+// POSITIONS API
 export const positionAPI = {
   getAll: async () => {
     try {
@@ -191,61 +147,9 @@ export const positionAPI = {
   }
 }
 
-// EMPLOYEES API - Fixed
-export const employeeAPI = {
-  getAll: async () => {
-    try {
-      const response = await api.get('/employees')
-      return {
-        success: true,
-        data: response.data
-      }
-    } catch (error) {
-      throw new Error(error.response?.data?.error || 'Không thể tải danh sách nhân viên')
-    }
-  },
-
-  create: async (employeeData) => {
-    try {
-      const response = await api.post('/employees', employeeData)
-      return {
-        success: true,
-        message: 'Thêm nhân viên thành công',
-        data: response.data
-      }
-    } catch (error) {
-      throw new Error(error.response?.data?.error || 'Không thể thêm nhân viên')
-    }
-  },
-
-  update: async (id, employeeData) => {
-    try {
-      const response = await api.put(`/employees/${id}`, employeeData)
-      return {
-        success: true,
-        message: 'Cập nhật nhân viên thành công',
-        data: response.data
-      }
-    } catch (error) {
-      throw new Error(error.response?.data?.error || 'Không thể cập nhật nhân viên')
-    }
-  },
-
-  delete: async (id) => {
-    try {
-      await api.delete(`/employees/${id}`)
-      return {
-        success: true,
-        message: 'Xóa nhân viên thành công'
-      }
-    } catch (error) {
-      throw new Error(error.response?.data?.error || 'Không thể xóa nhân viên')
-    }
-  }
-}
-
-// COURSES API - Fixed
+// COURSES API - UPDATED WITH NEW FIELDS
 export const courseAPI = {
+  // Lấy tất cả học phần
   getAll: async () => {
     try {
       const response = await api.get('/courses')
@@ -254,45 +158,119 @@ export const courseAPI = {
         data: response.data
       }
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Không thể tải danh sách khóa học')
+      throw new Error(error.response?.data?.error || 'Không thể tải danh sách học phần')
     }
   },
 
+  // Lấy học phần theo ID
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/courses/${id}`)
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải thông tin học phần')
+    }
+  },
+
+  // Tạo học phần mới
   create: async (courseData) => {
     try {
-      const response = await api.post('/courses', courseData)
+      // Validate dữ liệu
+      if (!courseData.course_code || !courseData.course_name) {
+        throw new Error('Mã học phần và tên học phần là bắt buộc')
+      }
+
+      // Xử lý các trường JSON
+      const processedData = {
+        ...courseData,
+        prerequisite_course_ids: courseData.prerequisite_course_ids || [],
+        corequisite_course_ids: courseData.corequisite_course_ids || [],
+        prior_course_ids: courseData.prior_course_ids || []
+      }
+
+      const response = await api.post('/courses', processedData)
       return {
         success: true,
-        message: 'Thêm khóa học thành công',
+        message: 'Thêm học phần thành công',
         data: response.data
       }
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Không thể thêm khóa học')
+      if (error.response?.data?.error?.includes('Duplicate entry')) {
+        throw new Error('Mã học phần đã tồn tại')
+      }
+      throw new Error(error.response?.data?.error || error.message || 'Không thể thêm học phần')
     }
   },
 
+  // Cập nhật học phần
   update: async (id, courseData) => {
     try {
-      const response = await api.put(`/courses/${id}`, courseData)
+      // Xử lý các trường JSON
+      const processedData = {
+        ...courseData,
+        prerequisite_course_ids: courseData.prerequisite_course_ids || [],
+        corequisite_course_ids: courseData.corequisite_course_ids || [],
+        prior_course_ids: courseData.prior_course_ids || []
+      }
+
+      const response = await api.put(`/courses/${id}`, processedData)
       return {
         success: true,
-        message: 'Cập nhật khóa học thành công',
+        message: 'Cập nhật học phần thành công',
         data: response.data
       }
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Không thể cập nhật khóa học')
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật học phần')
     }
   },
 
+  // Xóa học phần
   delete: async (id) => {
     try {
       await api.delete(`/courses/${id}`)
       return {
         success: true,
-        message: 'Xóa khóa học thành công'
+        message: 'Xóa học phần thành công'
       }
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Không thể xóa khóa học')
+      throw new Error(error.response?.data?.error || 'Không thể xóa học phần')
+    }
+  },
+
+  // Lấy tên các học phần theo danh sách ID
+  getCourseNamesByIds: async (courseIds) => {
+    try {
+      if (!courseIds || courseIds.length === 0) {
+        return { success: true, data: [] }
+      }
+
+      const response = await api.post('/courses/get-names-by-ids', { courseIds })
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      console.error('Error getting course names:', error)
+      return { success: true, data: [] }
+    }
+  },
+
+  // Kiểm tra điều kiện tiên quyết
+  checkPrerequisites: async (courseId, employeeId) => {
+    try {
+      const response = await api.post('/courses/check-prerequisites', {
+        courseId,
+        employeeId
+      })
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể kiểm tra điều kiện tiên quyết')
     }
   }
 }
@@ -349,7 +327,6 @@ export const courseCategoryAPI = {
     }
   }
 }
-
 
 // HEALTH CHECK
 export const healthAPI = {

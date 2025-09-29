@@ -11,14 +11,15 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/departments" element={<DepartmentManagement />} />
-            <Route path="/employees" element={<EmployeeManagement />} />
-            <Route path="/courses" element={<CourseManagement />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Bọc Layout và dùng nested routes */}
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="departments" element={<DepartmentManagement />} />
+            <Route path="employees" element={<EmployeeManagement />} />
+            <Route path="courses" element={<CourseManagement />} />
+          </Route>
+        </Routes>
         <Toaster position="top-right" />
       </div>
     </Router>

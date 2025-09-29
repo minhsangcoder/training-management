@@ -215,30 +215,10 @@ const Sidebar = ({ isOpen, onToggle }) => {
               className="pt-4 border-t border-blue-700"
             />
           </nav>
-
-          {/* Quick Actions */}
-          <div className="px-4 py-3 bg-blue-700 border-t border-blue-600">
-            <div className="grid grid-cols-2 gap-2">
-              <button 
-                onClick={() => handleNavigation('/quick-approve')}
-                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-colors duration-200"
-              >
-                ⚡ Duyệt nhanh
-              </button>
-              <button 
-                onClick={() => handleNavigation('/emergency-notice')}
-                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-colors duration-200"
-              >
-                🚨 Thông báo
-              </button>
-            </div>
-          </div>
-
           {/* Footer */}
           <div className="px-4 py-3 bg-blue-900 border-t border-blue-700">
             <div className="text-center">
-              <p className="text-blue-200 text-xs">Phiên bản 2.1.0</p>
-              <p className="text-blue-300 text-xs mt-1">© 2024 Phenikaa University</p>
+              
             </div>
           </div>
         </div>

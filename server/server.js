@@ -38,17 +38,24 @@ app.use((req, res, next) => {
 // Database Connection - MySQL Configuration
 // =======================
 const sequelize = new Sequelize("training_management", "root", "123456", {
-  host: "127.0.0.1",
-  dialect: "mysql",
+  host: "127.0.0.1",          // ép dùng TCP thay vì socket
   port: 3306,
-  logging: (msg) => console.log(`[DB] ${msg}`), // Enhanced database logging
+  dialect: "mysql",
+  dialectOptions: {
+    connectTimeout: 60000,    // timeout connect 60s
+  },
+  logging: (msg) => console.log(`[DB] ${msg}`),
   pool: {
     max: 5,
     min: 0,
     acquire: 30000,
-    idle: 10000
+    idle: 10000,
   }
 });
+
+
+
+
 
 // Test database connection
 async function testConnection() {
@@ -56,6 +63,13 @@ async function testConnection() {
     console.log("[DB] Attempting to connect to MySQL database...")
     await sequelize.authenticate();
     console.log("✅ [DB] MySQL connection established successfully!");
+
+    // await sequelize.sync({ force: true });
+    const [results] = await sequelize.query("DESCRIBE course_categories;");
+    console.log("📋 [DB] Fields in table course_categories:");
+
+
+
     return true;
   } catch (error) {
     console.error("❌ [DB] MySQL connection failed:", error.message);
@@ -67,16 +81,16 @@ async function testConnection() {
 async function loadSampleData() {
   try {
     console.log("[DB] Checking for sample data...");
-    
+
     // Check if we already have data
     const departmentCount = await Department.count();
     if (departmentCount > 0) {
       console.log("[DB] Sample data already exists, skipping...");
       return;
     }
-    
+
     console.log("[DB] Loading sample data...");
-    
+
     // Create course categories
     const courseCategories = await CourseCategory.bulkCreate([
       { category_code: 'TECH', category_name: 'Công nghệ thông tin', description: 'Các khóa học về công nghệ thông tin và lập trình' },
@@ -84,7 +98,7 @@ async function loadSampleData() {
       { category_code: 'SOFT', category_name: 'Kỹ năng mềm', description: 'Các khóa học về kỹ năng giao tiếp và làm việc nhóm' },
       { category_code: 'LANG', category_name: 'Ngoại ngữ', description: 'Các khóa học về ngoại ngữ' }
     ]);
-    
+
     // Create departments
     const departments = await Department.bulkCreate([
       { department_code: 'IT', department_name: 'Phòng Công nghệ thông tin', description: 'Phòng phụ trách về công nghệ thông tin' },
@@ -92,7 +106,7 @@ async function loadSampleData() {
       { department_code: 'FIN', department_name: 'Phòng Tài chính', description: 'Phòng phụ trách về tài chính kế toán' },
       { department_code: 'MKT', department_name: 'Phòng Marketing', description: 'Phòng phụ trách về marketing và bán hàng' }
     ]);
-    
+
     // Create positions
     const positions = await Position.bulkCreate([
       { position_code: 'DEV', position_name: 'Lập trình viên', level: 3, description: 'Phát triển phần mềm', department_id: 1 },
@@ -102,7 +116,7 @@ async function loadSampleData() {
       { position_code: 'ACCOUNTANT', position_name: 'Kế toán', level: 3, description: 'Kế toán viên', department_id: 3 },
       { position_code: 'MKT_MGR', position_name: 'Trưởng phòng marketing', level: 5, description: 'Quản lý phòng marketing', department_id: 4 }
     ]);
-    
+
     // Create employees
     const employees = await Employee.bulkCreate([
       { employee_code: 'EMP001', first_name: 'Nguyễn Văn', last_name: 'An', email: 'an.nguyen@company.com', phone: '0123456789', position_id: 1, department_id: 1, hire_date: '2023-01-15', salary: 15000000 },
@@ -112,13 +126,13 @@ async function loadSampleData() {
       { employee_code: 'EMP005', first_name: 'Hoàng Văn', last_name: 'Em', email: 'em.hoang@company.com', phone: '0123456793', position_id: 5, department_id: 3, hire_date: '2022-11-05', salary: 13000000 },
       { employee_code: 'EMP006', first_name: 'Vũ Thị', last_name: 'Phương', email: 'phuong.vu@company.com', phone: '0123456794', position_id: 6, department_id: 4, hire_date: '2021-08-15', salary: 22000000 }
     ]);
-    
+
     // Update department managers
     await Department.update({ manager_id: 2 }, { where: { id: 1 } });
     await Department.update({ manager_id: 3 }, { where: { id: 2 } });
     await Department.update({ manager_id: 5 }, { where: { id: 3 } });
     await Department.update({ manager_id: 6 }, { where: { id: 4 } });
-    
+
     console.log("✅ [DB] Sample data loaded successfully!");
   } catch (error) {
     console.error("❌ [DB] Failed to load sample data:", error.message);
@@ -129,26 +143,26 @@ async function loadSampleData() {
 // Models - ENHANCED WITH STATUS
 // =======================
 const Department = sequelize.define("Department", {
-  department_code: { 
-    type: DataTypes.STRING(20), 
-    allowNull: false, 
+  department_code: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
     unique: true,
     validate: {
       notEmpty: true,
       len: [1, 20]
     }
   },
-  department_name: { 
-    type: DataTypes.STRING(100), 
+  department_name: {
+    type: DataTypes.STRING(100),
     allowNull: false,
     validate: {
       notEmpty: true,
       len: [1, 100]
     }
   },
-  description: { 
+  description: {
     type: DataTypes.TEXT,
-    allowNull: true 
+    allowNull: true
   },
   parent_department_id: {
     type: DataTypes.INTEGER,
@@ -162,8 +176,8 @@ const Department = sequelize.define("Department", {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   }
-}, { 
-  tableName: "departments", 
+}, {
+  tableName: "departments",
   timestamps: true,
   underscored: true
 });
@@ -174,9 +188,9 @@ const Position = sequelize.define("Position", {
     allowNull: false,
     unique: true
   },
-  position_name: { 
-    type: DataTypes.STRING(100), 
-    allowNull: false 
+  position_name: {
+    type: DataTypes.STRING(100),
+    allowNull: false
   },
   level: {
     type: DataTypes.INTEGER,
@@ -195,8 +209,8 @@ const Position = sequelize.define("Position", {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   }
-}, { 
-  tableName: "positions", 
+}, {
+  tableName: "positions",
   timestamps: true,
   underscored: true
 });
@@ -207,24 +221,24 @@ const Employee = sequelize.define("Employee", {
     allowNull: false,
     unique: true
   },
-  first_name: { 
-    type: DataTypes.STRING(50), 
-    allowNull: false 
+  first_name: {
+    type: DataTypes.STRING(50),
+    allowNull: false
   },
-  last_name: { 
-    type: DataTypes.STRING(50), 
-    allowNull: false 
+  last_name: {
+    type: DataTypes.STRING(50),
+    allowNull: false
   },
-  email: { 
-    type: DataTypes.STRING(100), 
+  email: {
+    type: DataTypes.STRING(100),
     unique: true,
     allowNull: false,
     validate: {
       isEmail: true
     }
   },
-  phone: { 
-    type: DataTypes.STRING(20) 
+  phone: {
+    type: DataTypes.STRING(20)
   },
   address: {
     type: DataTypes.TEXT
@@ -263,97 +277,93 @@ const Employee = sequelize.define("Employee", {
     type: DataTypes.STRING(20),
     defaultValue: 'Active'
   }
-}, { 
-  tableName: "employees", 
+}, {
+  tableName: "employees",
   timestamps: true,
   underscored: true
 });
 
 const CourseCategory = sequelize.define("CourseCategory", {
-  name: { 
-    type: DataTypes.STRING(255), 
-    allowNull: false 
+  category_code: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    validate: { notEmpty: true, len: [1, 20] },
   },
-  description: { 
-    type: DataTypes.TEXT 
+
+  // Tên danh mục (NOT NULL)
+  category_name: {
+    type: DataTypes.STRING(255),
+    allowNull: false,
+    validate: { notEmpty: true, len: [1, 255] },
   },
-  status: {
-    type: DataTypes.ENUM('active', 'inactive'),
-    defaultValue: 'active'
-  }
-}, { 
-  tableName: "course_categories", 
+
+  // Mô tả
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+
+  // Trạng thái hoạt động (bảng của bạn dùng is_active BOOLEAN)
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+}, {
+  tableName: "course_categories",
   timestamps: true,
   underscored: true
 });
 
 const Course = sequelize.define("Course", {
-<<<<<<< HEAD
-  code: { 
-=======
-  course_code: { 
->>>>>>> 51bb7be (Cập nhật code mới)
-    type: DataTypes.STRING(50), 
-    allowNull: false, 
-    unique: true 
+  course_code: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true
   },
-<<<<<<< HEAD
-  name: { 
-=======
-  course_name: { 
->>>>>>> 51bb7be (Cập nhật code mới)
-    type: DataTypes.STRING(255), 
-    allowNull: false 
+  course_name: {
+    type: DataTypes.STRING(255),
+    allowNull: false
   },
-  description: { 
-    type: DataTypes.TEXT 
-  },
-<<<<<<< HEAD
-  duration_hours: {
-    type: DataTypes.INTEGER
-  },
-  instructor: {
-    type: DataTypes.STRING(255)
-=======
+  description: DataTypes.TEXT,
   category_id: {
     type: DataTypes.INTEGER,
     allowNull: true
   },
-  duration_hours: {
-    type: DataTypes.INTEGER
-  },
-  credits: {
-    type: DataTypes.INTEGER
-  },
+  duration_hours: DataTypes.INTEGER,
+  total_credits: DataTypes.INTEGER,
   level: {
     type: DataTypes.STRING(50),
     defaultValue: 'Beginner'
   },
-  prerequisites: {
-    type: DataTypes.TEXT
+  prerequisite_course_ids: DataTypes.TEXT,
+  learning_objectives: DataTypes.TEXT,
+  created_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   },
-  learning_objectives: {
-    type: DataTypes.TEXT
->>>>>>> 51bb7be (Cập nhật code mới)
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
-  status: {
-    type: DataTypes.ENUM('draft', 'active', 'completed', 'cancelled'),
-    defaultValue: 'draft'
-  }
-}, { 
-  tableName: "courses", 
+  // status: {
+  //   type: DataTypes.ENUM('draft', 'active', 'completed', 'cancelled'),
+  //   defaultValue: 'draft'
+  // }
+}, {
+  tableName: "courses",
   timestamps: true,
   underscored: true
 });
 
+
 const CourseSession = sequelize.define("CourseSession", {
-  start_date: { 
-    type: DataTypes.DATE, 
-    allowNull: false 
+  start_date: {
+    type: DataTypes.DATE,
+    allowNull: false
   },
-  end_date: { 
-    type: DataTypes.DATE, 
-    allowNull: false 
+  end_date: {
+    type: DataTypes.DATE,
+    allowNull: false
   },
   max_participants: {
     type: DataTypes.INTEGER,
@@ -363,23 +373,23 @@ const CourseSession = sequelize.define("CourseSession", {
     type: DataTypes.ENUM('scheduled', 'in_progress', 'completed', 'cancelled'),
     defaultValue: 'scheduled'
   }
-}, { 
-  tableName: "course_sessions", 
+}, {
+  tableName: "course_sessions",
   timestamps: true,
   underscored: true
 });
 
 const Enrollment = sequelize.define("Enrollment", {
-  status: { 
-    type: DataTypes.ENUM('pending', 'approved', 'rejected', 'completed'), 
-    defaultValue: "pending" 
+  status: {
+    type: DataTypes.ENUM('pending', 'approved', 'rejected', 'completed'),
+    defaultValue: "pending"
   },
   enrolled_date: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   }
-}, { 
-  tableName: "enrollments", 
+}, {
+  tableName: "enrollments",
   timestamps: true,
   underscored: true
 });
@@ -396,8 +406,9 @@ Employee.belongsTo(Department, { foreignKey: 'department_id' });
 Position.hasMany(Employee, { foreignKey: 'position_id' });
 Employee.belongsTo(Position, { foreignKey: 'position_id' });
 
-CourseCategory.hasMany(Course, { foreignKey: 'course_category_id' });
-Course.belongsTo(CourseCategory, { foreignKey: 'course_category_id' });
+CourseCategory.hasMany(Course, { foreignKey: 'category_id' });
+Course.belongsTo(CourseCategory, { foreignKey: 'category_id', as: 'CourseCategory' });
+Course.belongsTo(Employee, { foreignKey: 'created_by', as: 'CreatedBy' });
 
 Course.hasMany(CourseSession, { foreignKey: 'course_id' });
 CourseSession.belongsTo(Course, { foreignKey: 'course_id' });
@@ -414,19 +425,19 @@ Enrollment.belongsTo(CourseSession, { foreignKey: 'course_session_id' });
 const handleError = (res, error, defaultMessage = "Internal server error") => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] [API Error] ${error.name}:`, error.message);
-  
+
   if (error.name === 'SequelizeValidationError') {
     return res.status(400).json({
       error: error.errors.map(e => e.message).join(', ')
     });
   }
-  
+
   if (error.name === 'SequelizeUniqueConstraintError') {
     return res.status(400).json({
       error: "Dữ liệu đã tồn tại"
     });
   }
-  
+
   res.status(500).json({
     error: error.message || defaultMessage
   });
@@ -440,7 +451,7 @@ const handleError = (res, error, defaultMessage = "Internal server error") => {
 app.get("/api/health", (req, res) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [HEALTH] Health check requested`);
-  
+
   res.json({
     success: true,
     message: "Server is running",
@@ -478,7 +489,7 @@ app.post("/api/departments", async (req, res) => {
     const { department_code, department_name, description, parent_department_id, manager_id, is_active = true } = req.body;
 
     console.log(req.body);
-    
+
     if (!department_code || !department_name) {
       return res.status(400).json({
         error: "Mã phòng ban và tên phòng ban là bắt buộc"
@@ -497,7 +508,7 @@ app.post("/api/departments", async (req, res) => {
       manager_id: cleanManagerId,
       is_active
     });
-    
+
     res.status(201).json(department);
   } catch (error) {
     handleError(res, error, "Không thể thêm phòng ban");
@@ -510,7 +521,7 @@ app.put("/api/departments/:id", async (req, res) => {
     if (!department) {
       return res.status(404).json({ error: "Không tìm thấy phòng ban" });
     }
-    
+
     // Convert empty strings to null for integer fields
     const updateData = { ...req.body };
     if (updateData.parent_department_id === '') {
@@ -519,7 +530,7 @@ app.put("/api/departments/:id", async (req, res) => {
     if (updateData.manager_id === '') {
       updateData.manager_id = null;
     }
-    
+
     await department.update(updateData);
     res.json(department);
   } catch (error) {
@@ -533,18 +544,18 @@ app.delete("/api/departments/:id", async (req, res) => {
     if (!department) {
       return res.status(404).json({ error: "Không tìm thấy phòng ban" });
     }
-    
+
     // Check if department has employees
     const employeeCount = await Employee.count({
       where: { department_id: req.params.id }
     });
-    
+
     if (employeeCount > 0) {
       return res.status(400).json({
         error: "Không thể xóa phòng ban có nhân viên"
       });
     }
-    
+
     await department.destroy();
     res.json({ message: "Xóa phòng ban thành công" });
   } catch (error) {
@@ -571,10 +582,10 @@ app.get("/api/positions", async (req, res) => {
 app.post("/api/positions", async (req, res) => {
   try {
     const { position_code, position_name, level, description, department_id, is_active = true } = req.body;
-    
+
     // Convert empty string to null for department_id
     const cleanDepartmentId = department_id === '' ? null : department_id;
-    
+
     if (!position_code || !position_name || !cleanDepartmentId) {
       return res.status(400).json({
         error: "Mã chức vụ, tên chức vụ và phòng ban là bắt buộc"
@@ -589,7 +600,7 @@ app.post("/api/positions", async (req, res) => {
       department_id: cleanDepartmentId,
       is_active
     });
-    
+
     res.status(201).json(position);
   } catch (error) {
     handleError(res, error, "Không thể thêm chức vụ");
@@ -622,14 +633,12 @@ app.delete("/api/positions/:id", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 app.post("/api/courses", async (req, res) => {
   try {
-    let { 
-      course_code, course_name, description, category_id, 
-      duration_hours, credits, level, prerequisites, 
-      learning_objectives, created_by, is_active = true 
+    let {
+      course_code, course_name, description, category_id,
+      duration_hours, credits, level, prerequisites,
+      learning_objectives, created_by, is_active = true
     } = req.body;
 
     if (!course_code || !course_name) {
@@ -675,8 +684,30 @@ app.get("/api/courses", async (req, res) => {
   }
 });
 
+app.get("/api/course-categories", async (req, res) => {
+  try {
+    const categories = await CourseCategory.findAll({
+      order: [["created_at", "DESC"]],
+    });
+    res.json(categories);
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách danh mục học phần");
+  }
+});
 
->>>>>>> 51bb7be (Cập nhật code mới)
+// GET 1 course category by id
+app.get("/api/course-categories/:id", async (req, res) => {
+  try {
+    const category = await CourseCategory.findByPk(req.params.id);
+    if (!category) {
+      return res.status(404).json({ error: "Không tìm thấy danh mục học phần" });
+    }
+    res.json(category);
+  } catch (error) {
+    handleError(res, error, "Không thể tải thông tin danh mục học phần");
+  }
+});
+
 // Continue with other routes (employees, courses, etc.) following same pattern...
 // [Previous routes remain the same but with enhanced error handling]
 
@@ -689,12 +720,12 @@ app.get("/api/dashboard/stats", async (req, res) => {
       Course.count(),
       Enrollment.count()
     ]);
-    
-    res.json({ 
-      totalEmployees, 
-      totalDepartments, 
-      totalCourses, 
-      totalEnrollments 
+
+    res.json({
+      totalEmployees,
+      totalDepartments,
+      totalCourses,
+      totalEnrollments
     });
   } catch (error) {
     handleError(res, error, "Không thể tải thống kê dashboard");
@@ -716,12 +747,12 @@ async function initializeServer() {
   try {
     // Sync database tables (this will create tables based on Sequelize models)
     console.log("[DB] Syncing database tables...");
-    await sequelize.sync({ alter: true }); // Use alter to update schema if needed
+    await sequelize.sync(); // { force: true } to drop & recreate tables
     console.log("✅ [DB] Database tables synced successfully");
-    
+
     // Load sample data if tables are empty
     await loadSampleData();
-    
+
     // Start server
     app.listen(PORT, () => {
       const timestamp = new Date().toISOString();
