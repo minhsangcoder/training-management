@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Search, Filter, BookOpen, Clock, GraduationCap, Building2, Link as LinkIcon } from 'lucide-react'
 import { courseAPI, courseCategoryAPI, departmentAPI } from '@/services/api'
 import toast from 'react-hot-toast'
+import axios from "axios";
 
 const CourseManagement = () => {
   const [courses, setCourses] = useState([])
@@ -59,6 +60,7 @@ const CourseManagement = () => {
       setLoading(false)
     }
   }
+
 
   const loadCourses = async () => {
     try {
@@ -166,7 +168,7 @@ const CourseManagement = () => {
   const handleDelete = async (course) => {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa học phần ${course.course_name}?`)) return
     try {
-      await courseAPI.delete(course.id)
+      await courseAPI.delete(`/${course.id}`)
       toast.success('Xóa học phần thành công!')
       loadCourses()
     } catch (error) {

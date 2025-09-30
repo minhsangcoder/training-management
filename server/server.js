@@ -67,6 +67,7 @@ async function testConnection() {
     // await sequelize.sync({ force: true });
     const [results] = await sequelize.query("DESCRIBE course_categories;");
     console.log("📋 [DB] Fields in table course_categories:");
+    console.table(results);
 
 
 
@@ -669,6 +670,7 @@ app.post("/api/courses", async (req, res) => {
   }
 });
 
+
 app.get("/api/courses", async (req, res) => {
   try {
     const courses = await Course.findAll({
@@ -681,6 +683,49 @@ app.get("/api/courses", async (req, res) => {
     res.json(courses);
   } catch (error) {
     handleError(res, error, "Không thể tải danh sách học phần");
+  }
+});
+
+// Cập nhật học phần
+app.put("/api/courses/:id", async (req, res) => {
+  try {
+    const course = await Course.findByPk(req.params.id);
+    if (!course) {
+      return res.status(404).json({ error: "Không tìm thấy học phần" });
+    }
+
+    // Chỉ cho phép update những field hợp lệ
+    const allowedFields = [
+      "course_name",
+      "description",
+      "category_id",
+      "duration_hours",
+      "credits",
+      "level",
+      "prerequisites",
+      "learning_objectives",
+      "is_active"
+    ];
+
+    await course.update(req.body, { fields: allowedFields });
+    res.json(course);
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật học phần");
+  }
+});
+
+// Xóa học phần
+app.delete("/api/courses/:id", async (req, res) => {
+  try {
+    const course = await Course.findByPk(req.params.id);
+    if (!course) {
+      return res.status(404).json({ error: "Không tìm thấy học phần" });
+    }
+
+    await course.destroy();
+    res.json({ message: "Xóa học phần thành công" });
+  } catch (error) {
+    handleError(res, error, "Không thể xóa học phần");
   }
 });
 
@@ -710,6 +755,7 @@ app.get("/api/course-categories/:id", async (req, res) => {
 
 // Continue with other routes (employees, courses, etc.) following same pattern...
 // [Previous routes remain the same but with enhanced error handling]
+
 
 // ---- Dashboard ----
 app.get("/api/dashboard/stats", async (req, res) => {
