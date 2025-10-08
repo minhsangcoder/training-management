@@ -1,76 +1,37 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { 
-  Home, 
-  Newspaper, 
-  User, 
-  BookOpen, 
+import {
+  Home,
   GraduationCap,
-  Calendar, 
-  FileText,
-  ChevronRight,
+  BookOpen,
+  Layers,
+  GitBranch,
+  Settings,
   Users,
-  ClipboardList,
-  BarChart3,
-  Award,
-  Clock,
-  UserCheck,
-  Settings
+  ChevronRight
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onToggle }) => {
   const location = useLocation()
 
+  // Menu chính
   const mainMenuItems = [
     { path: '/', label: 'Trang chủ', icon: Home },
-    { path: '/news', label: 'Tin tức', icon: Newspaper },
-    { path: '/profile', label: 'Profile', icon: User },
   ]
 
+  // Quản lý đào tạo
   const trainingManagementItems = [
-    { path: '/programs', label: 'Chương trình đào tạo', icon: GraduationCap },
-    { path: '/subjects', label: 'Học phần & môn học', icon: BookOpen },
-    { path: '/curriculum', label: 'Khung chương trình', icon: FileText },
-    { path: '/outcomes', label: 'Chuẩn đầu ra', icon: Award },
+    { path: '/majors', label: 'Quản lý ngành học', icon: GraduationCap },
+    { path: '/courses', label: 'Quản lý khóa học', icon: BookOpen },
+    { path: '/subjects', label: 'Quản lý học phần', icon: Layers },
+    { path: '/knowledge-blocks', label: 'Quản lý khối kiến thức', icon: GitBranch },
+    { path: '/curriculum-structure', label: 'Quản lý cấu trúc CTĐT', icon: BookOpen },
   ]
 
-  const studentManagementItems = [
-    { path: '/students', label: 'Danh sách sinh viên', icon: Users },
-    { path: '/registrations', label: 'Đăng ký học', icon: ClipboardList },
-    { path: '/transfers', label: 'Chuyển ngành/chuyển trường', icon: UserCheck },
-    { path: '/graduation', label: 'Xét tốt nghiệp', icon: Award },
-  ]
-
+  // Quản lý hệ thống (chỉ giữ cơ cấu tổ chức & nhân viên)
   const managementItems = [
     { path: '/departments', label: 'Quản lý cơ cấu tổ chức', icon: Settings },
     { path: '/employees', label: 'Quản lý nhân viên', icon: Users },
-    { path: '/courses', label: 'Quản lý học phần', icon: BookOpen },
-  ]
-
-  const teacherManagementItems = [
-    { path: '/teachers', label: 'Danh sách giảng viên', icon: UserCheck },
-    { path: '/assignments', label: 'Phân công giảng dạy', icon: ClipboardList },
-    { path: '/workload', label: 'Khối lượng công việc', icon: BarChart3 },
-  ]
-
-  const scheduleManagementItems = [
-    { path: '/timetable', label: 'Thời khóa biểu', icon: Calendar },
-    { path: '/exams', label: 'Lịch thi', icon: Clock },
-    { path: '/rooms', label: 'Phòng học', icon: Home },
-    { path: '/sessions', label: 'Ca học/Ca thi', icon: Calendar },
-  ]
-
-  const reportsItems = [
-    { path: '/academic-reports', label: 'Kết quả học tập', icon: BarChart3 },
-    { path: '/graduation-rate', label: 'Tỷ lệ tốt nghiệp', icon: Award },
-    { path: '/program-evaluation', label: 'Đánh giá chương trình', icon: FileText },
-    { path: '/periodic-reports', label: 'Báo cáo định kỳ', icon: ClipboardList },
-  ]
-
-  const systemItems = [
-    { path: '/study-settings', label: 'Thông số học tập', icon: Settings },
-    { path: '/regulations', label: 'Quy định đào tạo', icon: FileText },
-    { path: '/system-config', label: 'Cấu hình hệ thống', icon: Settings },
   ]
 
   const handleNavigation = (path) => {
@@ -93,18 +54,15 @@ const Sidebar = ({ isOpen, onToggle }) => {
           <Link
             key={item.path}
             to={item.path}
-            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
-              isActive 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-blue-100 hover:bg-blue-700 hover:text-white'
-            }`}
+            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${isActive
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-blue-100 hover:bg-blue-700 hover:text-white'
+              }`}
             onClick={() => handleNavigation(item.path)}
           >
             <Icon className="w-5 h-5 mr-3" />
             <span className="flex-1 text-left">{item.label}</span>
-            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${
-              isActive ? 'transform translate-x-1' : ''
-            }`} />
+            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'translate-x-1' : ''}`} />
           </Link>
         )
       })}
@@ -113,20 +71,21 @@ const Sidebar = ({ isOpen, onToggle }) => {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Overlay (mobile) */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
           onClick={onToggle}
         />
       )}
-      
-      {/* Sidebar */}
+
+      {/* Sidebar chính */}
       <div className={`
         fixed inset-y-0 left-0 z-30 w-64 bg-blue-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex flex-col h-full">
+
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 bg-blue-900">
             <div className="flex items-center space-x-3">
@@ -158,68 +117,27 @@ const Sidebar = ({ isOpen, onToggle }) => {
             </div>
           </div>
 
-          {/* Navigation */}
+          {/* Menu */}
           <nav className="flex-1 px-4 py-4 space-y-4 overflow-y-auto" style={{
             scrollbarWidth: 'thin',
             scrollbarColor: '#93c5fd #1e40af'
           }}>
-            {/* Main Menu */}
             <MenuSection items={mainMenuItems} />
-
-            {/* Training Management */}
-            <MenuSection 
-              title="Quản lý đào tạo" 
+            <MenuSection
+              title="Quản lý đào tạo"
               items={trainingManagementItems}
               className="pt-4 border-t border-blue-700"
             />
-
-            {/* Student Management */}
-            <MenuSection 
-              title="Quản lý sinh viên" 
-              items={studentManagementItems}
-              className="pt-4 border-t border-blue-700"
-            />
-
-            {/* Management Items - Giữ nguyên từ code cũ */}
-            <MenuSection 
-              title="Quản lý hệ thống" 
+            <MenuSection
+              title="Quản lý hệ thống"
               items={managementItems}
               className="pt-4 border-t border-blue-700"
             />
-
-            {/* Teacher Management */}
-            <MenuSection 
-              title="Quản lý giảng viên" 
-              items={teacherManagementItems}
-              className="pt-4 border-t border-blue-700"
-            />
-
-            {/* Schedule Management */}
-            <MenuSection 
-              title="Lịch học & Thi" 
-              items={scheduleManagementItems}
-              className="pt-4 border-t border-blue-700"
-            />
-
-            {/* Reports */}
-            <MenuSection 
-              title="Báo cáo & Thống kê" 
-              items={reportsItems}
-              className="pt-4 border-t border-blue-700"
-            />
-
-            {/* System Settings */}
-            <MenuSection 
-              title="Cài đặt hệ thống" 
-              items={systemItems}
-              className="pt-4 border-t border-blue-700"
-            />
           </nav>
+
           {/* Footer */}
-          <div className="px-4 py-3 bg-blue-900 border-t border-blue-700">
-            <div className="text-center">
-              
-            </div>
+          <div className="px-4 py-3 bg-blue-900 border-t border-blue-700 text-center text-blue-200 text-xs">
+            © 2025 Phenikaa University
           </div>
         </div>
       </div>

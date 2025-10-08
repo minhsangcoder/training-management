@@ -5,7 +5,7 @@ import Layout from '@/components/Layout/Layout'
 import Dashboard from '@/pages/Dashboard'
 import DepartmentManagement from '@/pages/DepartmentManagement'
 import EmployeeManagement from '@/pages/EmployeeManagement'
-import CourseManagement from '@/pages/CourseManagement'
+import SubjectsManagement from '@/pages/SubjectManagement'
 
 function App() {
   return (
@@ -15,9 +15,14 @@ function App() {
           {/* Bọc Layout và dùng nested routes */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
+            <Route path="majors" element={/*<MajorsManagement />*/ <div>Trang tạm</div>} />
+            <Route path="courses" element={/*<CourseManagement />*/ <div>Trang tạm</div>} />
+            <Route path="subjects" element={<SubjectsManagement />} />
+            <Route path="knowledge-blocks" element={/*<KnowledgeBlockManagement />*/ <div>Trang tạm</div>} />
+            <Route path="curriculum-structure" element={/*<CurriculumStructureManagement />*/ <div>Trang tạm</div>} />
             <Route path="departments" element={<DepartmentManagement />} />
             <Route path="employees" element={<EmployeeManagement />} />
-            <Route path="courses" element={<CourseManagement />} />
+
           </Route>
         </Routes>
         <Toaster position="top-right" />
