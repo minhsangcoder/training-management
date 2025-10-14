@@ -22,7 +22,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
   // Quản lý đào tạo
   const trainingManagementItems = [
     { path: '/majors', label: 'Quản lý ngành học', icon: GraduationCap },
-    { path: '/cohort', label: 'Quản lý lớp học', icon: BookOpen },
+    { path: '/cohort', label: 'Quản lý khoá học', icon: BookOpen },
     { path: '/subjects', label: 'Quản lý học phần', icon: Layers },
     { path: '/knowledge-blocks', label: 'Quản lý khối kiến thức', icon: GitBranch },
     { path: '/curriculum-structure', label: 'Quản lý cấu trúc CTĐT', icon: BookOpen },
