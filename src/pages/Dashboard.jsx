@@ -11,54 +11,72 @@ import {
   UserCheck,
   ClipboardList,
   Award,
-  BarChart3
+  BarChart3,
+  Building,
+  GitBranch
 } from 'lucide-react'
+import axios from 'axios'
+import toast from 'react-hot-toast'
 
 const Dashboard = () => {
-  // Mock data phù hợp với phòng đào tạo
   const [stats, setStats] = useState({
-    totalPrograms: 45,
-    totalStudents: 3250,
-    totalSubjects: 285,
-    pendingRegistrations: 28,
-    graduationRate: 85,
-    warningStudents: 45,
-    activeClasses: 128,
-    roomUtilization: 95
+    totalEmployees: 0,
+    totalDepartments: 0,
+    totalCourses: 0,
+    totalEnrollments: 0,
+    totalMajors: 0,
+    totalCohorts: 0,
+    totalKnowledgeBlocks: 0,
+    totalPositions: 0,
+    activeEmployees: 0,
+    activeCohorts: 0,
+    completedCohorts: 0
   })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadStats()
+  }, [])
+
+  const loadStats = async () => {
+    try {
+      const response = await axios.get('/api/dashboard/stats')
+      setStats(response.data)
+    } catch (error) {
+      toast.error('Không thể tải thống kê')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const statCards = [
     {
-      title: 'Tổng số chương trình đào tạo',
-      value: stats.totalPrograms,
-      icon: GraduationCap,
-      color: 'bg-blue-500',
-      change: '+3',
-      changeType: 'positive'
-    },
-    {
-      title: 'Tổng số sinh viên',
-      value: stats.totalStudents.toLocaleString(),
+      title: 'Tổng nhân viên',
+      value: stats.totalEmployees,
       icon: Users,
-      color: 'bg-green-500',
-      change: '+125',
-      changeType: 'positive'
+      color: 'bg-blue-500',
+      subtitle: `${stats.activeEmployees} đang hoạt động`
     },
     {
-      title: 'Tổng số học phần',
-      value: stats.totalSubjects,
+      title: 'Tổng ngành học',
+      value: stats.totalMajors,
+      icon: GraduationCap,
+      color: 'bg-green-500',
+      subtitle: 'Các chương trình đào tạo'
+    },
+    {
+      title: 'Tổng khóa học',
+      value: stats.totalCourses,
       icon: BookOpen,
       color: 'bg-purple-500',
-      change: '+8',
-      changeType: 'positive'
+      subtitle: 'Học phần và môn học'
     },
     {
-      title: 'Đơn đăng ký chờ duyệt',
-      value: stats.pendingRegistrations,
-      icon: Clock,
+      title: 'Lớp học',
+      value: stats.totalCohorts,
+      icon: Calendar,
       color: 'bg-orange-500',
-      change: '-5',
-      changeType: 'positive'
+      subtitle: `${stats.activeCohorts} đang diễn ra`
     }
   ]
 
@@ -157,31 +175,30 @@ const Dashboard = () => {
     }
   ]
 
-  // Quick stats mới
   const quickStats = [
     {
-      label: 'Tỷ lệ tốt nghiệp đúng hạn',
-      value: `${stats.graduationRate}%`,
-      icon: '🏆',
-      color: 'text-green-600'
-    },
-    {
-      label: 'SV cảnh báo học vụ',
-      value: stats.warningStudents,
-      icon: '⚠️',
-      color: 'text-red-600'
-    },
-    {
-      label: 'Lớp học đang diễn ra',
-      value: stats.activeClasses,
-      icon: '📖',
+      label: 'Phòng ban',
+      value: stats.totalDepartments,
+      icon: Building,
       color: 'text-blue-600'
     },
     {
-      label: 'Tỷ lệ sử dụng phòng học',
-      value: `${stats.roomUtilization}%`,
-      icon: '🏫',
+      label: 'Chức vụ',
+      value: stats.totalPositions,
+      icon: Award,
+      color: 'text-green-600'
+    },
+    {
+      label: 'Khối kiến thức',
+      value: stats.totalKnowledgeBlocks,
+      icon: GitBranch,
       color: 'text-purple-600'
+    },
+    {
+      label: 'Lớp hoàn thành',
+      value: stats.completedCohorts,
+      icon: CheckCircle,
+      color: 'text-orange-600'
     }
   ]
 
@@ -231,6 +248,14 @@ const Dashboard = () => {
     }
   ]
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
@@ -249,14 +274,7 @@ const Dashboard = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
                   <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                  <div className="flex items-center mt-2">
-                    <span className={`text-sm font-medium ${
-                      stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {stat.change}
-                    </span>
-                    <span className="text-sm text-gray-500 ml-1">so với tháng trước</span>
-                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
                 </div>
                 <div className={`p-3 rounded-full ${stat.color}`}>
                   <Icon className="w-6 h-6 text-white" />
@@ -269,17 +287,20 @@ const Dashboard = () => {
 
       {/* Quick Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {quickStats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">{stat.icon}</span>
-              <div>
-                <p className="text-xs text-gray-500">{stat.label}</p>
-                <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
+        {quickStats.map((stat, index) => {
+          const Icon = stat.icon
+          return (
+            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center space-x-3">
+                <Icon className={`w-6 h-6 ${stat.color}`} />
+                <div>
+                  <p className="text-xs text-gray-500">{stat.label}</p>
+                  <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Functional Modules */}

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Search, Filter, User, Mail, Phone, MapPin, Calendar, DollarSign } from 'lucide-react'
-import { mockEmployees, mockDepartments, mockPositions } from '@/services/mockData'
+import { employeeAPI, departmentAPI, positionAPI } from '@/services/api'
 import toast from 'react-hot-toast'
 
 const EmployeeManagement = () => {
-  const [employees, setEmployees] = useState(mockEmployees)
-  const [departments] = useState(mockDepartments)
-  const [positions] = useState(mockPositions)
+  const [employees, setEmployees] = useState([])
+  const [departments, setDepartments] = useState([])
+  const [positions, setPositions] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [departmentFilter, setDepartmentFilter] = useState('all')
@@ -31,9 +32,34 @@ const EmployeeManagement = () => {
     status: 'Active'
   })
 
+  // Load data on component mount
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const [employeesRes, departmentsRes, positionsRes] = await Promise.all([
+        employeeAPI.getAll(),
+        departmentAPI.getAll(),
+        positionAPI.getAll()
+      ])
+      
+      setEmployees(employeesRes.data)
+      setDepartments(departmentsRes.data)
+      setPositions(positionsRes.data)
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const filteredEmployees = employees.filter(emp => {
+    const fullName = `${emp.first_name} ${emp.last_name}`
     const matchesSearch = 
-      emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       emp.employee_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       emp.email.toLowerCase().includes(searchTerm.toLowerCase())
     
@@ -89,47 +115,35 @@ const EmployeeManagement = () => {
     setShowModal(true)
   }
 
-  const handleDelete = (employee) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa nhân viên ${employee.full_name}?`)) {
-      setEmployees(employees.filter(e => e.id !== employee.id))
-      toast.success('Xóa nhân viên thành công!')
+  const handleDelete = async (employee) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa nhân viên ${employee.first_name} ${employee.last_name}?`)) {
+      try {
+        await employeeAPI.delete(employee.id)
+        await loadData() // Reload data
+        toast.success('Xóa nhân viên thành công!')
+      } catch (error) {
+        toast.error(error.message)
+      }
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (modalType === 'create') {
-      const newEmployee = {
-        id: Date.now(),
-        ...formData,
-        full_name: `${formData.first_name} ${formData.last_name}`,
-        position_name: positions.find(p => p.id === parseInt(formData.position_id))?.position_name,
-        department_name: departments.find(d => d.id === parseInt(formData.department_id))?.department_name,
-        manager_name: formData.manager_id ? employees.find(e => e.id === parseInt(formData.manager_id))?.full_name : null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+    try {
+      if (modalType === 'create') {
+        await employeeAPI.create(formData)
+        toast.success('Tạo nhân viên thành công!')
+      } else {
+        await employeeAPI.update(selectedEmployee.id, formData)
+        toast.success('Cập nhật nhân viên thành công!')
       }
-      setEmployees([...employees, newEmployee])
-      toast.success('Tạo nhân viên thành công!')
-    } else {
-      setEmployees(employees.map(emp => 
-        emp.id === selectedEmployee.id 
-          ? { 
-              ...emp, 
-              ...formData, 
-              full_name: `${formData.first_name} ${formData.last_name}`,
-              position_name: positions.find(p => p.id === parseInt(formData.position_id))?.position_name,
-              department_name: departments.find(d => d.id === parseInt(formData.department_id))?.department_name,
-              manager_name: formData.manager_id ? employees.find(e => e.id === parseInt(formData.manager_id))?.full_name : null,
-              updated_at: new Date().toISOString() 
-            }
-          : emp
-      ))
-      toast.success('Cập nhật nhân viên thành công!')
+      
+      await loadData() // Reload data
+      setShowModal(false)
+    } catch (error) {
+      toast.error(error.message)
     }
-    
-    setShowModal(false)
   }
 
   const getStatusColor = (status) => {
@@ -267,9 +281,17 @@ const EmployeeManagement = () => {
         </button>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <table className="min-w-full divide-y divide-gray-200">
+      {!loading && (
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="table-header">Mã NV</th>
@@ -293,7 +315,7 @@ const EmployeeManagement = () => {
                       <User className="w-4 h-4 text-gray-600" />
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">{employee.full_name}</div>
+                      <div className="font-medium text-gray-900">{employee.first_name} {employee.last_name}</div>
                       <div className="text-sm text-gray-500">{employee.id_card}</div>
                     </div>
                   </div>
@@ -310,8 +332,8 @@ const EmployeeManagement = () => {
                     {employee.phone}
                   </div>
                 </td>
-                <td className="table-cell">{employee.department_name}</td>
-                <td className="table-cell">{employee.position_name}</td>
+                <td className="table-cell">{employee.Department?.department_name}</td>
+                <td className="table-cell">{employee.Position?.position_name}</td>
                 <td className="table-cell">
                   <div className="flex items-center">
                     <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
@@ -343,7 +365,8 @@ const EmployeeManagement = () => {
             ))}
           </tbody>
         </table>
-      </div>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (
@@ -541,7 +564,7 @@ const EmployeeManagement = () => {
                     >
                       <option value="">Chọn quản lý</option>
                       {employees.filter(emp => emp.id !== selectedEmployee?.id).map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.full_name}</option>
+                        <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
                       ))}
                     </select>
                   </div>

@@ -6,6 +6,10 @@ import Dashboard from '@/pages/Dashboard'
 import DepartmentManagement from '@/pages/DepartmentManagement'
 import EmployeeManagement from '@/pages/EmployeeManagement'
 import SubjectsManagement from '@/pages/SubjectManagement'
+import CohortManagement from '@/pages/CohortManagement'
+import MajorManagement from '@/pages/MajorManagement'
+import KnowledgeBlockManagement from '@/pages/KnowledgeBlockManagement'
+import CurriculumStructureManagement from '@/pages/CurriculumStructureManagement'
 
 function App() {
   return (
@@ -15,11 +19,11 @@ function App() {
           {/* Bọc Layout và dùng nested routes */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
-            <Route path="majors" element={/*<MajorsManagement />*/ <div>Trang tạm</div>} />
-            <Route path="courses" element={/*<CourseManagement />*/ <div>Trang tạm</div>} />
+            <Route path="majors" element={<MajorManagement />} />
+            <Route path="cohort" element={<CohortManagement />} />
             <Route path="subjects" element={<SubjectsManagement />} />
-            <Route path="knowledge-blocks" element={/*<KnowledgeBlockManagement />*/ <div>Trang tạm</div>} />
-            <Route path="curriculum-structure" element={/*<CurriculumStructureManagement />*/ <div>Trang tạm</div>} />
+            <Route path="knowledge-blocks" element={<KnowledgeBlockManagement />} />
+            <Route path="curriculum-structure" element={<CurriculumStructureManagement />} />
             <Route path="departments" element={<DepartmentManagement />} />
             <Route path="employees" element={<EmployeeManagement />} />
 

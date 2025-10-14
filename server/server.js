@@ -17,7 +17,8 @@ app.use(cors({
     "http://localhost:3002", // Additional port
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    "http://127.0.0.1:3002"
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:3003"
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -65,9 +66,9 @@ async function testConnection() {
     console.log("✅ [DB] MySQL connection established successfully!");
 
     // await sequelize.sync({ force: true });
-    const [results] = await sequelize.query("DESCRIBE course_categories;");
-    console.log("📋 [DB] Fields in table course_categories:");
-    console.table(results);
+    // const [results] = await sequelize.query("DESCRIBE course_categories;");
+    // console.log("📋 [DB] Fields in table course_categories:");
+    // console.table(results);
 
 
 
@@ -395,6 +396,165 @@ const Enrollment = sequelize.define("Enrollment", {
   underscored: true
 });
 
+const Cohort = sequelize.define("Cohort", {
+  cohort_code: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true
+  },
+  cohort_name: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  start_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: false
+  },
+  end_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  max_students: {
+    type: DataTypes.INTEGER,
+    defaultValue: 30
+  },
+  current_students: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  status: {
+    type: DataTypes.ENUM('planning', 'active', 'completed', 'cancelled'),
+    defaultValue: 'planning'
+  },
+  course_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  instructor_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  }
+}, {
+  tableName: "cohorts",
+  timestamps: true,
+  underscored: true
+});
+
+const Major = sequelize.define("Major", {
+  major_code: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true
+  },
+  major_name: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  degree_type: {
+    type: DataTypes.ENUM('associate', 'bachelor', 'master', 'doctorate'),
+    defaultValue: 'bachelor'
+  },
+  duration_years: {
+    type: DataTypes.INTEGER,
+    defaultValue: 4
+  },
+  total_credits: {
+    type: DataTypes.INTEGER,
+    defaultValue: 120
+  },
+  department_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  head_of_major_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  tableName: "majors",
+  timestamps: true,
+  underscored: true
+});
+
+const KnowledgeBlock = sequelize.define("KnowledgeBlock", {
+  block_code: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true
+  },
+  block_name: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  total_credits: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  is_required: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  major_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  tableName: "knowledge_blocks",
+  timestamps: true,
+  underscored: true
+});
+
+const CurriculumStructure = sequelize.define("CurriculumStructure", {
+  major_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  knowledge_block_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  semester: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  is_required: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  min_credits: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  }
+}, {
+  tableName: "curriculum_structures",
+  timestamps: true,
+  underscored: true
+});
+
 // =======================
 // Associations
 // =======================
@@ -419,6 +579,27 @@ Enrollment.belongsTo(Employee, { foreignKey: 'employee_id' });
 
 CourseSession.hasMany(Enrollment, { foreignKey: 'course_session_id' });
 Enrollment.belongsTo(CourseSession, { foreignKey: 'course_session_id' });
+
+Course.hasMany(Cohort, { foreignKey: 'course_id' });
+Cohort.belongsTo(Course, { foreignKey: 'course_id', as: 'Course' });
+
+Employee.hasMany(Cohort, { foreignKey: 'instructor_id' });
+Cohort.belongsTo(Employee, { foreignKey: 'instructor_id', as: 'Instructor' });
+
+Department.hasMany(Major, { foreignKey: 'department_id' });
+Major.belongsTo(Department, { foreignKey: 'department_id', as: 'Department' });
+
+Employee.hasMany(Major, { foreignKey: 'head_of_major_id' });
+Major.belongsTo(Employee, { foreignKey: 'head_of_major_id', as: 'HeadOfMajor' });
+
+Major.hasMany(KnowledgeBlock, { foreignKey: 'major_id' });
+KnowledgeBlock.belongsTo(Major, { foreignKey: 'major_id', as: 'Major' });
+
+Major.hasMany(CurriculumStructure, { foreignKey: 'major_id' });
+CurriculumStructure.belongsTo(Major, { foreignKey: 'major_id', as: 'Major' });
+
+KnowledgeBlock.hasMany(CurriculumStructure, { foreignKey: 'knowledge_block_id' });
+CurriculumStructure.belongsTo(KnowledgeBlock, { foreignKey: 'knowledge_block_id', as: 'KnowledgeBlock' });
 
 // =======================
 // Helper function to handle errors
@@ -753,25 +934,530 @@ app.get("/api/course-categories/:id", async (req, res) => {
   }
 });
 
-// Continue with other routes (employees, courses, etc.) following same pattern...
-// [Previous routes remain the same but with enhanced error handling]
+// ---- Employees ----
+app.get("/api/employees", async (req, res) => {
+  try {
+    const employees = await Employee.findAll({
+      include: [
+        {
+          model: Department,
+          attributes: ['id', 'department_name', 'department_code']
+        },
+        {
+          model: Position,
+          attributes: ['id', 'position_name', 'position_code', 'level']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+    res.json(employees);
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách nhân viên");
+  }
+});
 
+app.get("/api/employees/:id", async (req, res) => {
+  try {
+    const employee = await Employee.findByPk(req.params.id, {
+      include: [
+        {
+          model: Department,
+          attributes: ['id', 'department_name', 'department_code']
+        },
+        {
+          model: Position,
+          attributes: ['id', 'position_name', 'position_code', 'level']
+        }
+      ]
+    });
+    if (!employee) {
+      return res.status(404).json({ error: "Không tìm thấy nhân viên" });
+    }
+    res.json(employee);
+  } catch (error) {
+    handleError(res, error, "Không thể tải thông tin nhân viên");
+  }
+});
+
+app.post("/api/employees", async (req, res) => {
+  try {
+    const {
+      employee_code, first_name, last_name, email, phone, address,
+      date_of_birth, gender, id_card, position_id, department_id,
+      manager_id, hire_date, salary, status = 'Active'
+    } = req.body;
+
+    if (!employee_code || !first_name || !last_name || !email || !position_id || !department_id || !hire_date) {
+      return res.status(400).json({
+        error: "Mã nhân viên, họ tên, email, chức vụ, phòng ban và ngày tuyển dụng là bắt buộc"
+      });
+    }
+
+    // Convert empty strings to null for optional fields
+    const cleanManagerId = manager_id === '' ? null : manager_id;
+    const cleanIdCard = id_card === '' ? null : id_card;
+    const cleanAddress = address === '' ? null : address;
+    const cleanPhone = phone === '' ? null : phone;
+
+    const employee = await Employee.create({
+      employee_code,
+      first_name,
+      last_name,
+      email,
+      phone: cleanPhone,
+      address: cleanAddress,
+      date_of_birth,
+      gender,
+      id_card: cleanIdCard,
+      position_id,
+      department_id,
+      manager_id: cleanManagerId,
+      hire_date,
+      salary,
+      status
+    });
+
+    res.status(201).json(employee);
+  } catch (error) {
+    handleError(res, error, "Không thể thêm nhân viên");
+  }
+});
+
+app.put("/api/employees/:id", async (req, res) => {
+  try {
+    const employee = await Employee.findByPk(req.params.id);
+    if (!employee) {
+      return res.status(404).json({ error: "Không tìm thấy nhân viên" });
+    }
+
+    // Convert empty strings to null for optional fields
+    const updateData = { ...req.body };
+    if (updateData.manager_id === '') {
+      updateData.manager_id = null;
+    }
+    if (updateData.id_card === '') {
+      updateData.id_card = null;
+    }
+    if (updateData.address === '') {
+      updateData.address = null;
+    }
+    if (updateData.phone === '') {
+      updateData.phone = null;
+    }
+
+    await employee.update(updateData);
+    res.json(employee);
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật nhân viên");
+  }
+});
+
+app.delete("/api/employees/:id", async (req, res) => {
+  try {
+    const employee = await Employee.findByPk(req.params.id);
+    if (!employee) {
+      return res.status(404).json({ error: "Không tìm thấy nhân viên" });
+    }
+
+    await employee.destroy();
+    res.json({ message: "Xóa nhân viên thành công" });
+  } catch (error) {
+    handleError(res, error, "Không thể xóa nhân viên");
+  }
+});
+
+// ---- Curriculum Structure ----
+app.get("/api/curriculum-structure", async (req, res) => {
+  try {
+    const structures = await CurriculumStructure.findAll({
+      include: [
+        { model: Major, as: 'Major', attributes: ['id', 'major_name', 'major_code'] },
+        { model: KnowledgeBlock, as: 'KnowledgeBlock', attributes: ['id', 'block_name', 'block_code'] }
+      ],
+      order: [['major_id', 'ASC'], ['semester', 'ASC']]
+    });
+    res.json(structures);
+  } catch (error) {
+    handleError(res, error, "Không thể tải cấu trúc CTĐT");
+  }
+});
+
+app.post("/api/curriculum-structure", async (req, res) => {
+  try {
+    const { major_id, knowledge_block_id, semester, is_required = true, min_credits = 0, notes } = req.body;
+    if (!major_id || !knowledge_block_id) {
+      return res.status(400).json({ error: "Ngành học và khối kiến thức là bắt buộc" });
+    }
+    const structure = await CurriculumStructure.create({ major_id, knowledge_block_id, semester, is_required, min_credits, notes: notes || null });
+    res.status(201).json(structure);
+  } catch (error) {
+    handleError(res, error, "Không thể thêm cấu trúc");
+  }
+});
+
+app.put("/api/curriculum-structure/:id", async (req, res) => {
+  try {
+    const structure = await CurriculumStructure.findByPk(req.params.id);
+    if (!structure) return res.status(404).json({ error: "Không tìm thấy cấu trúc" });
+    await structure.update(req.body);
+    res.json(structure);
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật cấu trúc");
+  }
+});
+
+app.delete("/api/curriculum-structure/:id", async (req, res) => {
+  try {
+    const structure = await CurriculumStructure.findByPk(req.params.id);
+    if (!structure) return res.status(404).json({ error: "Không tìm thấy cấu trúc" });
+    await structure.destroy();
+    res.json({ message: "Xóa thành công" });
+  } catch (error) {
+    handleError(res, error, "Không thể xóa cấu trúc");
+  }
+});
+
+// ---- Knowledge Blocks ----
+app.get("/api/knowledge-blocks", async (req, res) => {
+  try {
+    const blocks = await KnowledgeBlock.findAll({
+      include: [{ model: Major, as: 'Major', attributes: ['id', 'major_name', 'major_code'] }],
+      order: [['created_at', 'DESC']]
+    });
+    res.json(blocks);
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách khối kiến thức");
+  }
+});
+
+app.post("/api/knowledge-blocks", async (req, res) => {
+  try {
+    const { block_code, block_name, description, total_credits = 0, is_required = true, major_id, is_active = true } = req.body;
+    if (!block_code || !block_name) {
+      return res.status(400).json({ error: "Mã khối và tên khối là bắt buộc" });
+    }
+    const block = await KnowledgeBlock.create({
+      block_code, block_name, description: description || null,
+      total_credits, is_required, major_id: major_id || null, is_active
+    });
+    res.status(201).json(block);
+  } catch (error) {
+    handleError(res, error, "Không thể thêm khối kiến thức");
+  }
+});
+
+app.put("/api/knowledge-blocks/:id", async (req, res) => {
+  try {
+    const block = await KnowledgeBlock.findByPk(req.params.id);
+    if (!block) return res.status(404).json({ error: "Không tìm thấy khối kiến thức" });
+    await block.update(req.body);
+    res.json(block);
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật khối kiến thức");
+  }
+});
+
+app.delete("/api/knowledge-blocks/:id", async (req, res) => {
+  try {
+    const block = await KnowledgeBlock.findByPk(req.params.id);
+    if (!block) return res.status(404).json({ error: "Không tìm thấy khối kiến thức" });
+    await block.destroy();
+    res.json({ message: "Xóa khối kiến thức thành công" });
+  } catch (error) {
+    handleError(res, error, "Không thể xóa khối kiến thức");
+  }
+});
+
+// ---- Majors ----
+app.get("/api/majors", async (req, res) => {
+  try {
+    const majors = await Major.findAll({
+      include: [
+        {
+          model: Department,
+          as: 'Department',
+          attributes: ['id', 'department_name', 'department_code']
+        },
+        {
+          model: Employee,
+          as: 'HeadOfMajor',
+          attributes: ['id', 'first_name', 'last_name', 'email']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+    res.json(majors);
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách ngành học");
+  }
+});
+
+app.get("/api/majors/:id", async (req, res) => {
+  try {
+    const major = await Major.findByPk(req.params.id, {
+      include: [
+        {
+          model: Department,
+          as: 'Department',
+          attributes: ['id', 'department_name', 'department_code']
+        },
+        {
+          model: Employee,
+          as: 'HeadOfMajor',
+          attributes: ['id', 'first_name', 'last_name', 'email']
+        }
+      ]
+    });
+    if (!major) {
+      return res.status(404).json({ error: "Không tìm thấy ngành học" });
+    }
+    res.json(major);
+  } catch (error) {
+    handleError(res, error, "Không thể tải thông tin ngành học");
+  }
+});
+
+app.post("/api/majors", async (req, res) => {
+  try {
+    const {
+      major_code, major_name, description, degree_type = 'bachelor',
+      duration_years = 4, total_credits = 120, department_id,
+      head_of_major_id, is_active = true
+    } = req.body;
+
+    if (!major_code || !major_name) {
+      return res.status(400).json({
+        error: "Mã ngành học và tên ngành học là bắt buộc"
+      });
+    }
+
+    // Convert empty strings to null for optional fields
+    const cleanDepartmentId = department_id === '' ? null : department_id;
+    const cleanHeadOfMajorId = head_of_major_id === '' ? null : head_of_major_id;
+    const cleanDescription = description === '' ? null : description;
+
+    const major = await Major.create({
+      major_code,
+      major_name,
+      description: cleanDescription,
+      degree_type,
+      duration_years,
+      total_credits,
+      department_id: cleanDepartmentId,
+      head_of_major_id: cleanHeadOfMajorId,
+      is_active
+    });
+
+    res.status(201).json(major);
+  } catch (error) {
+    handleError(res, error, "Không thể thêm ngành học");
+  }
+});
+
+app.put("/api/majors/:id", async (req, res) => {
+  try {
+    const major = await Major.findByPk(req.params.id);
+    if (!major) {
+      return res.status(404).json({ error: "Không tìm thấy ngành học" });
+    }
+
+    // Convert empty strings to null for optional fields
+    const updateData = { ...req.body };
+    if (updateData.department_id === '') {
+      updateData.department_id = null;
+    }
+    if (updateData.head_of_major_id === '') {
+      updateData.head_of_major_id = null;
+    }
+    if (updateData.description === '') {
+      updateData.description = null;
+    }
+
+    await major.update(updateData);
+    res.json(major);
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật ngành học");
+  }
+});
+
+app.delete("/api/majors/:id", async (req, res) => {
+  try {
+    const major = await Major.findByPk(req.params.id);
+    if (!major) {
+      return res.status(404).json({ error: "Không tìm thấy ngành học" });
+    }
+
+    await major.destroy();
+    res.json({ message: "Xóa ngành học thành công" });
+  } catch (error) {
+    handleError(res, error, "Không thể xóa ngành học");
+  }
+});
+
+// ---- Cohorts ----
+app.get("/api/cohorts", async (req, res) => {
+  try {
+    const cohorts = await Cohort.findAll({
+      include: [
+        {
+          model: Course,
+          as: 'Course',
+          attributes: ['id', 'course_code', 'course_name', 'duration_hours', 'total_credits']
+        },
+        {
+          model: Employee,
+          as: 'Instructor',
+          attributes: ['id', 'first_name', 'last_name', 'email']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+    res.json(cohorts);
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách lớp học");
+  }
+});
+
+app.get("/api/cohorts/:id", async (req, res) => {
+  try {
+    const cohort = await Cohort.findByPk(req.params.id, {
+      include: [
+        {
+          model: Course,
+          as: 'Course',
+          attributes: ['id', 'course_code', 'course_name', 'duration_hours', 'total_credits']
+        },
+        {
+          model: Employee,
+          as: 'Instructor',
+          attributes: ['id', 'first_name', 'last_name', 'email']
+        }
+      ]
+    });
+    if (!cohort) {
+      return res.status(404).json({ error: "Không tìm thấy lớp học" });
+    }
+    res.json(cohort);
+  } catch (error) {
+    handleError(res, error, "Không thể tải thông tin lớp học");
+  }
+});
+
+app.post("/api/cohorts", async (req, res) => {
+  try {
+    const {
+      cohort_code, cohort_name, description, start_date, end_date,
+      max_students = 30, current_students = 0, status = 'planning',
+      course_id, instructor_id
+    } = req.body;
+
+    if (!cohort_code || !cohort_name || !start_date) {
+      return res.status(400).json({
+        error: "Mã lớp học, tên lớp học và ngày bắt đầu là bắt buộc"
+      });
+    }
+
+    // Convert empty strings to null for optional fields
+    const cleanCourseId = course_id === '' ? null : course_id;
+    const cleanInstructorId = instructor_id === '' ? null : instructor_id;
+    const cleanEndDate = end_date === '' ? null : end_date;
+    const cleanDescription = description === '' ? null : description;
+
+    const cohort = await Cohort.create({
+      cohort_code,
+      cohort_name,
+      description: cleanDescription,
+      start_date,
+      end_date: cleanEndDate,
+      max_students,
+      current_students,
+      status,
+      course_id: cleanCourseId,
+      instructor_id: cleanInstructorId
+    });
+
+    res.status(201).json(cohort);
+  } catch (error) {
+    handleError(res, error, "Không thể thêm lớp học");
+  }
+});
+
+app.put("/api/cohorts/:id", async (req, res) => {
+  try {
+    const cohort = await Cohort.findByPk(req.params.id);
+    if (!cohort) {
+      return res.status(404).json({ error: "Không tìm thấy lớp học" });
+    }
+
+    // Convert empty strings to null for optional fields
+    const updateData = { ...req.body };
+    if (updateData.course_id === '') {
+      updateData.course_id = null;
+    }
+    if (updateData.instructor_id === '') {
+      updateData.instructor_id = null;
+    }
+    if (updateData.end_date === '') {
+      updateData.end_date = null;
+    }
+    if (updateData.description === '') {
+      updateData.description = null;
+    }
+
+    await cohort.update(updateData);
+    res.json(cohort);
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật lớp học");
+  }
+});
+
+app.delete("/api/cohorts/:id", async (req, res) => {
+  try {
+    const cohort = await Cohort.findByPk(req.params.id);
+    if (!cohort) {
+      return res.status(404).json({ error: "Không tìm thấy lớp học" });
+    }
+
+    await cohort.destroy();
+    res.json({ message: "Xóa lớp học thành công" });
+  } catch (error) {
+    handleError(res, error, "Không thể xóa lớp học");
+  }
+});
 
 // ---- Dashboard ----
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
-    const [totalEmployees, totalDepartments, totalCourses, totalEnrollments] = await Promise.all([
+    const [
+      totalEmployees, totalDepartments, totalCourses, totalEnrollments,
+      totalMajors, totalCohorts, totalKnowledgeBlocks, totalPositions,
+      activeEmployees, activeCohorts, completedCohorts
+    ] = await Promise.all([
       Employee.count(),
       Department.count(),
       Course.count(),
-      Enrollment.count()
+      Enrollment.count(),
+      Major.count(),
+      Cohort.count(),
+      KnowledgeBlock.count(),
+      Position.count(),
+      Employee.count({ where: { status: 'Active' } }),
+      Cohort.count({ where: { status: 'active' } }),
+      Cohort.count({ where: { status: 'completed' } })
     ]);
 
     res.json({
       totalEmployees,
       totalDepartments,
       totalCourses,
-      totalEnrollments
+      totalEnrollments,
+      totalMajors,
+      totalCohorts,
+      totalKnowledgeBlocks,
+      totalPositions,
+      activeEmployees,
+      activeCohorts,
+      completedCohorts
     });
   } catch (error) {
     handleError(res, error, "Không thể tải thống kê dashboard");

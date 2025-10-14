@@ -328,6 +328,282 @@ export const courseCategoryAPI = {
   }
 }
 
+// CURRICULUM STRUCTURE API
+export const curriculumAPI = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/curriculum-structure')
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải cấu trúc CTĐT')
+    }
+  },
+  create: async (data) => {
+    try {
+      const response = await api.post('/curriculum-structure', data)
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể thêm cấu trúc')
+    }
+  },
+  update: async (id, data) => {
+    try {
+      const response = await api.put(`/curriculum-structure/${id}`, data)
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật')
+    }
+  },
+  delete: async (id) => {
+    try {
+      await api.delete(`/curriculum-structure/${id}`)
+      return { success: true }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể xóa')
+    }
+  }
+}
+
+// KNOWLEDGE BLOCKS API
+export const knowledgeBlockAPI = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/knowledge-blocks')
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải danh sách khối kiến thức')
+    }
+  },
+  create: async (data) => {
+    try {
+      const response = await api.post('/knowledge-blocks', data)
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể thêm khối kiến thức')
+    }
+  },
+  update: async (id, data) => {
+    try {
+      const response = await api.put(`/knowledge-blocks/${id}`, data)
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật khối kiến thức')
+    }
+  },
+  delete: async (id) => {
+    try {
+      await api.delete(`/knowledge-blocks/${id}`)
+      return { success: true }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể xóa khối kiến thức')
+    }
+  }
+}
+
+// MAJORS API
+export const majorAPI = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/majors')
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải danh sách ngành học')
+    }
+  },
+
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/majors/${id}`)
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải thông tin ngành học')
+    }
+  },
+
+  create: async (majorData) => {
+    try {
+      const response = await api.post('/majors', majorData)
+      return {
+        success: true,
+        message: 'Thêm ngành học thành công',
+        data: response.data
+      }
+    } catch (error) {
+      if (error.response?.data?.error?.includes('Duplicate entry')) {
+        throw new Error('Mã ngành học đã tồn tại')
+      }
+      throw new Error(error.response?.data?.error || 'Không thể thêm ngành học')
+    }
+  },
+
+  update: async (id, majorData) => {
+    try {
+      const response = await api.put(`/majors/${id}`, majorData)
+      return {
+        success: true,
+        message: 'Cập nhật ngành học thành công',
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật ngành học')
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      await api.delete(`/majors/${id}`)
+      return {
+        success: true,
+        message: 'Xóa ngành học thành công'
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể xóa ngành học')
+    }
+  }
+}
+
+// COHORTS API
+export const cohortAPI = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/cohorts')
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải danh sách lớp học')
+    }
+  },
+
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/cohorts/${id}`)
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải thông tin lớp học')
+    }
+  },
+
+  create: async (cohortData) => {
+    try {
+      const response = await api.post('/cohorts', cohortData)
+      return {
+        success: true,
+        message: 'Thêm lớp học thành công',
+        data: response.data
+      }
+    } catch (error) {
+      if (error.response?.data?.error?.includes('Duplicate entry')) {
+        throw new Error('Mã lớp học đã tồn tại')
+      }
+      throw new Error(error.response?.data?.error || 'Không thể thêm lớp học')
+    }
+  },
+
+  update: async (id, cohortData) => {
+    try {
+      const response = await api.put(`/cohorts/${id}`, cohortData)
+      return {
+        success: true,
+        message: 'Cập nhật lớp học thành công',
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật lớp học')
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      await api.delete(`/cohorts/${id}`)
+      return {
+        success: true,
+        message: 'Xóa lớp học thành công'
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể xóa lớp học')
+    }
+  }
+}
+
+// EMPLOYEES API
+export const employeeAPI = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/employees')
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải danh sách nhân viên')
+    }
+  },
+
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/employees/${id}`)
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải thông tin nhân viên')
+    }
+  },
+
+  create: async (employeeData) => {
+    try {
+      const response = await api.post('/employees', employeeData)
+      return {
+        success: true,
+        message: 'Thêm nhân viên thành công',
+        data: response.data
+      }
+    } catch (error) {
+      if (error.response?.data?.error?.includes('Duplicate entry')) {
+        throw new Error('Mã nhân viên hoặc email đã tồn tại')
+      }
+      throw new Error(error.response?.data?.error || 'Không thể thêm nhân viên')
+    }
+  },
+
+  update: async (id, employeeData) => {
+    try {
+      const response = await api.put(`/employees/${id}`, employeeData)
+      return {
+        success: true,
+        message: 'Cập nhật nhân viên thành công',
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật nhân viên')
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      await api.delete(`/employees/${id}`)
+      return {
+        success: true,
+        message: 'Xóa nhân viên thành công'
+      }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể xóa nhân viên')
+    }
+  }
+}
+
 // HEALTH CHECK
 export const healthAPI = {
   check: async () => {
