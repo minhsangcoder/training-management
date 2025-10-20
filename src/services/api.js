@@ -400,6 +400,62 @@ export const knowledgeBlockAPI = {
   }
 }
 
+// PROGRAMS API
+export const programAPI = {
+  getAll: async () => {
+    try {
+      const response = await api.get('/programs')
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải danh sách chương trình')
+    }
+  },
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/programs/${id}`)
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể tải thông tin chương trình')
+    }
+  },
+  create: async (data) => {
+    try {
+      if (!data.program_code || !data.program_name) {
+        throw new Error('Mã chương trình và tên chương trình là bắt buộc')
+      }
+      const response = await api.post('/programs', {
+        ...data,
+        description: data.description || null,
+        start_date: data.start_date || null,
+        end_date: data.end_date || null,
+        is_active: data.is_active ?? true
+      })
+      return { success: true, data: response.data }
+    } catch (error) {
+      if (error.response?.data?.error?.includes('Duplicate entry')) {
+        throw new Error('Mã chương trình đã tồn tại')
+      }
+      throw new Error(error.response?.data?.error || 'Không thể thêm chương trình')
+    }
+  },
+  update: async (id, data) => {
+    try {
+      const response = await api.put(`/programs/${id}`, data)
+      return { success: true, data: response.data }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể cập nhật chương trình')
+    }
+  },
+  delete: async (id) => {
+    try {
+      await api.delete(`/programs/${id}`)
+      return { success: true }
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Không thể xóa chương trình')
+    }
+  }
+}
+
 // MAJORS API
 export const majorAPI = {
   getAll: async () => {

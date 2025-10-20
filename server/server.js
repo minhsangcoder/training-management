@@ -430,7 +430,7 @@ const Cohort = sequelize.define("Cohort", {
     type: DataTypes.ENUM('planning', 'active', 'completed', 'cancelled'),
     defaultValue: 'planning'
   },
-  course_id: {
+  program_id: {
     type: DataTypes.INTEGER,
     allowNull: true
   },
@@ -555,6 +555,39 @@ const CurriculumStructure = sequelize.define("CurriculumStructure", {
   underscored: true
 });
 
+// Program model
+const Program = sequelize.define("Program", {
+  program_code: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true
+  },
+  program_name: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  start_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  end_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  tableName: "programs",
+  timestamps: true,
+  underscored: true
+});
+
 // =======================
 // Associations
 // =======================
@@ -580,8 +613,8 @@ Enrollment.belongsTo(Employee, { foreignKey: 'employee_id' });
 CourseSession.hasMany(Enrollment, { foreignKey: 'course_session_id' });
 Enrollment.belongsTo(CourseSession, { foreignKey: 'course_session_id' });
 
-Course.hasMany(Cohort, { foreignKey: 'course_id' });
-Cohort.belongsTo(Course, { foreignKey: 'course_id', as: 'Course' });
+Program.hasMany(Cohort, { foreignKey: 'program_id' });
+Cohort.belongsTo(Program, { foreignKey: 'program_id', as: 'Program' });
 
 Employee.hasMany(Cohort, { foreignKey: 'instructor_id' });
 Cohort.belongsTo(Employee, { foreignKey: 'instructor_id', as: 'Instructor' });
@@ -1294,15 +1327,94 @@ app.delete("/api/majors/:id", async (req, res) => {
   }
 });
 
+// ---- Programs ----
+app.get("/api/programs", async (req, res) => {
+  try {
+    const programs = await Program.findAll({
+      order: [["created_at", "DESC"]]
+    });
+    res.json(programs);
+  } catch (error) {
+    handleError(res, error, "Không thể tải danh sách chương trình");
+  }
+});
+
+app.get("/api/programs/:id", async (req, res) => {
+  try {
+    const program = await Program.findByPk(req.params.id);
+    if (!program) {
+      return res.status(404).json({ error: "Không tìm thấy chương trình" });
+    }
+    res.json(program);
+  } catch (error) {
+    handleError(res, error, "Không thể tải thông tin chương trình");
+  }
+});
+
+app.post("/api/programs", async (req, res) => {
+  try {
+    const { program_code, program_name, description, start_date, end_date, is_active = true } = req.body;
+
+    if (!program_code || !program_name) {
+      return res.status(400).json({ error: "Mã chương trình và tên chương trình là bắt buộc" });
+    }
+
+    const program = await Program.create({
+      program_code,
+      program_name,
+      description: description === '' ? null : description,
+      start_date: start_date === '' ? null : start_date,
+      end_date: end_date === '' ? null : end_date,
+      is_active
+    });
+
+    res.status(201).json(program);
+  } catch (error) {
+    handleError(res, error, "Không thể thêm chương trình");
+  }
+});
+
+app.put("/api/programs/:id", async (req, res) => {
+  try {
+    const program = await Program.findByPk(req.params.id);
+    if (!program) {
+      return res.status(404).json({ error: "Không tìm thấy chương trình" });
+    }
+
+    const updateData = { ...req.body };
+    if (updateData.description === '') updateData.description = null;
+    if (updateData.start_date === '') updateData.start_date = null;
+    if (updateData.end_date === '') updateData.end_date = null;
+
+    await program.update(updateData);
+    res.json(program);
+  } catch (error) {
+    handleError(res, error, "Không thể cập nhật chương trình");
+  }
+});
+
+app.delete("/api/programs/:id", async (req, res) => {
+  try {
+    const program = await Program.findByPk(req.params.id);
+    if (!program) {
+      return res.status(404).json({ error: "Không tìm thấy chương trình" });
+    }
+    await program.destroy();
+    res.json({ message: "Xóa chương trình thành công" });
+  } catch (error) {
+    handleError(res, error, "Không thể xóa chương trình");
+  }
+});
+
 // ---- Cohorts ----
 app.get("/api/cohorts", async (req, res) => {
   try {
     const cohorts = await Cohort.findAll({
       include: [
         {
-          model: Course,
-          as: 'Course',
-          attributes: ['id', 'course_code', 'course_name', 'duration_hours', 'total_credits']
+          model: Program,
+          as: 'Program',
+          attributes: ['id', 'program_code', 'program_name']
         },
         {
           model: Employee,
@@ -1323,9 +1435,9 @@ app.get("/api/cohorts/:id", async (req, res) => {
     const cohort = await Cohort.findByPk(req.params.id, {
       include: [
         {
-          model: Course,
-          as: 'Course',
-          attributes: ['id', 'course_code', 'course_name', 'duration_hours', 'total_credits']
+          model: Program,
+          as: 'Program',
+          attributes: ['id', 'program_code', 'program_name']
         },
         {
           model: Employee,
@@ -1348,7 +1460,7 @@ app.post("/api/cohorts", async (req, res) => {
     const {
       cohort_code, cohort_name, description, start_date, end_date,
       max_students = 30, current_students = 0, status = 'planning',
-      course_id, instructor_id
+      program_id, instructor_id
     } = req.body;
 
     if (!cohort_code || !cohort_name || !start_date) {
@@ -1358,7 +1470,7 @@ app.post("/api/cohorts", async (req, res) => {
     }
 
     // Convert empty strings to null for optional fields
-    const cleanCourseId = course_id === '' ? null : course_id;
+    const cleanProgramId = program_id === '' ? null : program_id;
     const cleanInstructorId = instructor_id === '' ? null : instructor_id;
     const cleanEndDate = end_date === '' ? null : end_date;
     const cleanDescription = description === '' ? null : description;
@@ -1372,7 +1484,7 @@ app.post("/api/cohorts", async (req, res) => {
       max_students,
       current_students,
       status,
-      course_id: cleanCourseId,
+      program_id: cleanProgramId,
       instructor_id: cleanInstructorId
     });
 
@@ -1391,8 +1503,8 @@ app.put("/api/cohorts/:id", async (req, res) => {
 
     // Convert empty strings to null for optional fields
     const updateData = { ...req.body };
-    if (updateData.course_id === '') {
-      updateData.course_id = null;
+    if (updateData.program_id === '') {
+      updateData.program_id = null;
     }
     if (updateData.instructor_id === '') {
       updateData.instructor_id = null;

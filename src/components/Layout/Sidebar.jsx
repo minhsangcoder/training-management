@@ -6,6 +6,7 @@ import {
   BookOpen,
   Layers,
   GitBranch,
+  ClipboardList,
   Settings,
   Users,
   ChevronRight
@@ -26,6 +27,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
     { path: '/subjects', label: 'Quản lý học phần', icon: Layers },
     { path: '/knowledge-blocks', label: 'Quản lý khối kiến thức', icon: GitBranch },
     { path: '/curriculum-structure', label: 'Quản lý cấu trúc CTĐT', icon: BookOpen },
+    { path: '/programs', label: 'Quản lý chương trình', icon: ClipboardList },
   ]
 
   // Quản lý hệ thống (chỉ giữ cơ cấu tổ chức & nhân viên)

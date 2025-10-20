@@ -191,16 +191,32 @@ CREATE TABLE `cohorts` (
   `max_students` int DEFAULT '30',
   `current_students` int DEFAULT '0',
   `status` enum('planning','active','completed','cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'planning',
-  `course_id` int DEFAULT NULL,
+  `program_id` int DEFAULT NULL,
   `instructor_id` int DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `cohort_code` (`cohort_code`),
-  KEY `course_id` (`course_id`),
+  KEY `program_id` (`program_id`),
   KEY `instructor_id` (`instructor_id`),
-  CONSTRAINT `cohorts_ibfk_1` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `cohorts_ibfk_program` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE SET NULL,
   CONSTRAINT `cohorts_ibfk_2` FOREIGN KEY (`instructor_id`) REFERENCES `employees` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: programs
+DROP TABLE IF EXISTS `programs`;
+CREATE TABLE `programs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `program_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `program_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `program_code` (`program_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table: knowledge_blocks
@@ -343,15 +359,21 @@ INSERT INTO `knowledge_blocks` (`id`, `block_code`, `block_name`, `description`,
 (6,'KTTH','Kiến thức thực hành','Khối thực tập và thực hành',8,1,1,1,'2025-10-14 00:20:15','2025-10-14 00:20:15');
 
 -- Insert cohorts
-INSERT INTO `cohorts` (`id`, `cohort_code`, `cohort_name`, `description`, `start_date`, `end_date`, `max_students`, `current_students`, `status`, `course_id`, `instructor_id`, `created_at`, `updated_at`) VALUES
-(9,'COH001','JavaScript Cơ bản - K1','Khóa học JavaScript cơ bản cho người mới bắt đầu','2024-01-15','2024-03-15',25,20,'completed',20,7,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
-(10,'COH002','React.js Development - K1','Khóa học React.js cho developers','2024-02-01','2024-04-01',20,18,'completed',21,8,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
-(11,'COH003','JavaScript Cơ bản - K2','Khóa học JavaScript cơ bản - Khóa 2','2024-03-01','2024-05-01',25,22,'active',20,7,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
-(12,'COH004','Node.js Backend - K1','Khóa học Node.js backend development','2024-04-01','2024-06-01',18,15,'active',22,9,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
-(13,'COH005','Python Programming - K1','Khóa học Python cho beginners','2024-05-01','2024-07-01',20,0,'planning',36,7,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
-(14,'COH006','React.js Advanced - K1','Khóa học React.js nâng cao','2024-06-01','2024-08-01',15,0,'planning',21,8,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
-(15,'COH007','Database Design - K1','Khóa học thiết kế database','2024-07-01','2024-09-01',22,0,'planning',22,10,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
-(16,'COH008','DevOps Fundamentals - K1','Khóa học DevOps cơ bản','2024-08-01','2024-10-01',16,0,'planning',23,11,'2025-10-13 17:45:33','2025-10-13 17:45:33');
+INSERT INTO `cohorts` (`id`, `cohort_code`, `cohort_name`, `description`, `start_date`, `end_date`, `max_students`, `current_students`, `status`, `program_id`, `instructor_id`, `created_at`, `updated_at`) VALUES
+(9,'COH001','JavaScript Cơ bản - K1','Khóa học JavaScript cơ bản cho người mới bắt đầu','2024-01-15','2024-03-15',25,20,'completed',1,7,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
+(10,'COH002','React.js Development - K1','Khóa học React.js cho developers','2024-02-01','2024-04-01',20,18,'completed',1,8,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
+(11,'COH003','JavaScript Cơ bản - K2','Khóa học JavaScript cơ bản - Khóa 2','2024-03-01','2024-05-01',25,22,'active',1,7,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
+(12,'COH004','Node.js Backend - K1','Khóa học Node.js backend development','2024-04-01','2024-06-01',18,15,'active',1,9,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
+(13,'COH005','Python Programming - K1','Khóa học Python cho beginners','2024-05-01','2024-07-01',20,0,'planning',1,7,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
+(14,'COH006','React.js Advanced - K1','Khóa học React.js nâng cao','2024-06-01','2024-08-01',15,0,'planning',1,8,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
+(15,'COH007','Database Design - K1','Khóa học thiết kế database','2024-07-01','2024-09-01',22,0,'planning',1,10,'2025-10-13 17:45:33','2025-10-13 17:45:33'),
+(16,'COH008','DevOps Fundamentals - K1','Khóa học DevOps cơ bản','2024-08-01','2024-10-01',16,0,'planning',1,11,'2025-10-13 17:45:33','2025-10-13 17:45:33');
+
+-- Insert programs
+INSERT INTO `programs` (`id`, `program_code`, `program_name`, `description`, `start_date`, `end_date`, `is_active`, `created_at`, `updated_at`) VALUES
+(1,'PRG2024-IT','Chương trình đào tạo IT 2024','Lộ trình đào tạo nội bộ cho khối CNTT năm 2024','2024-01-01','2024-12-31',1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(2,'PRG2024-HR','Chương trình đào tạo Nhân sự 2024','Nâng cao kỹ năng quản lý và tuân thủ cho phòng HR','2024-02-01','2024-11-30',1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(3,'PRG2025-ONB','Onboarding 2025','Chương trình hội nhập cho nhân viên mới 2025','2025-01-15',NULL,1,'2025-10-14 00:20:15','2025-10-14 00:20:15');
 
 -- Insert curriculum_structures
 INSERT INTO `curriculum_structures` (`id`, `major_id`, `knowledge_block_id`, `semester`, `is_required`, `min_credits`, `notes`, `created_at`, `updated_at`) VALUES

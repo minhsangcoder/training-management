@@ -10,6 +10,7 @@ import CohortManagement from '@/pages/CohortManagement'
 import MajorManagement from '@/pages/MajorManagement'
 import KnowledgeBlockManagement from '@/pages/KnowledgeBlockManagement'
 import CurriculumStructureManagement from '@/pages/CurriculumStructureManagement'
+import ProgramManagement from '@/pages/ProgramManagement'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="subjects" element={<SubjectsManagement />} />
             <Route path="knowledge-blocks" element={<KnowledgeBlockManagement />} />
             <Route path="curriculum-structure" element={<CurriculumStructureManagement />} />
+            <Route path="programs" element={<ProgramManagement />} />
             <Route path="departments" element={<DepartmentManagement />} />
             <Route path="employees" element={<EmployeeManagement />} />
 

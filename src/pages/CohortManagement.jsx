@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Search, Filter, Calendar, BookOpen } from 'lucide-react'
-import { cohortAPI, courseAPI, employeeAPI } from '@/services/api'
+import { cohortAPI, courseAPI, employeeAPI, programAPI } from '@/services/api'
 import toast from 'react-hot-toast'
 
 const CohortManagement = () => {
   const [cohorts, setCohorts] = useState([])
   const [courses, setCourses] = useState([])
+  const [programs, setPrograms] = useState([])
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -21,6 +22,7 @@ const CohortManagement = () => {
     end_date: '',
     status: 'planning',
     course_id: '',
+    program_id: '',
     instructor_id: ''
   })
 
@@ -31,14 +33,16 @@ const CohortManagement = () => {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [cohortsRes, coursesRes, employeesRes] = await Promise.all([
+      const [cohortsRes, coursesRes, employeesRes, programsRes] = await Promise.all([
         cohortAPI.getAll(),
         courseAPI.getAll(),
-        employeeAPI.getAll()
+        employeeAPI.getAll(),
+        programAPI.getAll()
       ])
       setCohorts(cohortsRes.data)
       setCourses(coursesRes.data)
       setEmployees(employeesRes.data)
+      setPrograms(programsRes.data)
     } catch (error) {
       toast.error(error.message)
     } finally {
@@ -65,6 +69,7 @@ const CohortManagement = () => {
       end_date: '',
       status: 'planning',
       course_id: '',
+      program_id: '',
       instructor_id: ''
     })
     setShowModal(true)
@@ -81,6 +86,7 @@ const CohortManagement = () => {
       end_date: c.end_date || '',
       status: c.status,
       course_id: c.course_id || '',
+      program_id: c.program_id || '',
       instructor_id: c.instructor_id || ''
     })
     setShowModal(true)
@@ -238,7 +244,7 @@ const CohortManagement = () => {
                     <div className="text-sm text-gray-500">{c.description}</div>
                   </td>
                   <td className="table-cell">
-                    {c.Course ? c.Course.course_name : <span className="text-gray-400">Chưa gán CTĐT</span>}
+                    {c.Program ? c.Program.program_name : <span className="text-gray-400">Chưa gán CTĐT</span>}
                   </td>
                   <td className="table-cell">
                     {formatDate(c.start_date)} – {formatDate(c.end_date)}
@@ -329,13 +335,13 @@ const CohortManagement = () => {
               <div>
                 <label className="text-sm font-medium text-gray-700">Chương trình đào tạo</label>
                 <select
-                  value={formData.course_id}
-                  onChange={(e) => setFormData({ ...formData, course_id: e.target.value })}
+                  value={formData.program_id}
+                  onChange={(e) => setFormData({ ...formData, program_id: e.target.value })}
                   className="input-field"
                 >
                   <option value="">Chọn CTĐT</option>
-                  {courses.map(c => (
-                    <option key={c.id} value={c.id}>{c.course_name}</option>
+                  {programs.map(p => (
+                    <option key={p.id} value={p.id}>{p.program_name}</option>
                   ))}
                 </select>
               </div>
