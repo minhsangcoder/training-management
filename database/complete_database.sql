@@ -105,9 +105,13 @@ CREATE TABLE `courses` (
   `category_id` int DEFAULT NULL,
   `duration_hours` int DEFAULT NULL,
   `total_credits` int DEFAULT NULL,
+  `theory_credits` int DEFAULT NULL,
+  `practice_credits` int DEFAULT NULL,
   `level` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'Beginner',
-  `prerequisite_course_ids` text COLLATE utf8mb4_unicode_ci,
+  `prerequisite_course_ids` text COLLATE utf8mb4_unicode_ci COMMENT 'Danh sách ID các học phần tiên quyết, phân cách bằng dấu phẩy',
+  `concurrent_course_ids` text COLLATE utf8mb4_unicode_ci COMMENT 'Danh sách ID các học phần song hành, phân cách bằng dấu phẩy',
   `learning_objectives` text COLLATE utf8mb4_unicode_ci,
+  `department_id` int DEFAULT NULL,
   `created_by` int DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT '1',
   `created_at` datetime NOT NULL,
@@ -115,8 +119,10 @@ CREATE TABLE `courses` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `course_code` (`course_code`),
   KEY `category_id` (`category_id`),
+  KEY `department_id` (`department_id`),
   KEY `created_by` (`created_by`),
   CONSTRAINT `courses_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `course_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `courses_ibfk_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL,
   CONSTRAINT `courses_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `employees` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -318,24 +324,26 @@ INSERT INTO `course_categories` (`id`, `category_code`, `category_name`, `descri
 (64,'COMPLIANCE','Tuân thủ pháp luật','Các khóa học về tuân thủ quy định và pháp luật',1,'2025-10-14 00:20:15','2025-10-14 00:20:15');
 
 -- Insert courses
-INSERT INTO `courses` (`id`, `course_code`, `course_name`, `description`, `category_id`, `duration_hours`, `total_credits`, `level`, `prerequisite_course_ids`, `learning_objectives`, `created_by`, `is_active`, `created_at`, `updated_at`) VALUES
-(20,'COURSE001','JavaScript Fundamentals','Học các kiến thức cơ bản về JavaScript',59,40,3,'Beginner',NULL,'Hiểu cú pháp JavaScript cơ bản, làm việc với DOM, xử lý sự kiện',7,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(21,'COURSE002','React.js Development','Phát triển ứng dụng web với React.js',59,60,4,'Intermediate','20','Xây dựng ứng dụng React, quản lý state, làm việc với hooks',8,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(22,'COURSE003','Node.js Backend','Phát triển backend với Node.js và Express',59,50,3,'Intermediate','20','Tạo RESTful API, làm việc với database, authentication',9,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(23,'COURSE004','DevOps Essentials','Kiến thức cơ bản về DevOps và CI/CD',59,45,3,'Advanced',NULL,'Hiểu về Docker, CI/CD pipeline, cloud deployment',7,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(24,'COURSE005','Leadership Skills','Kỹ năng lãnh đạo và quản lý nhóm',60,30,2,'Intermediate',NULL,'Phát triển kỹ năng lãnh đạo, quản lý xung đột, động viên nhân viên',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(25,'COURSE006','Project Management','Quản lý dự án hiệu quả',60,40,3,'Intermediate',NULL,'Kỹ thuật quản lý dự án, lập kế hoạch, theo dõi tiến độ',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(26,'COURSE007','Communication Skills','Kỹ năng giao tiếp chuyên nghiệp',61,25,2,'Beginner',NULL,'Giao tiếp hiệu quả, thuyết trình, viết email chuyên nghiệp',11,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(27,'COURSE008','Teamwork & Collaboration','Làm việc nhóm và hợp tác',61,20,1,'Beginner',NULL,'Xây dựng tinh thần đồng đội, giải quyết xung đột',11,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(28,'COURSE009','English for IT','Tiếng Anh chuyên ngành IT',62,50,3,'Intermediate',NULL,'Từ vựng IT, đọc tài liệu kỹ thuật, giao tiếp với đồng nghiệp nước ngoài',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(29,'COURSE010','Business English','Tiếng Anh thương mại',62,40,2,'Intermediate',NULL,'Email business, đàm phán, presentation',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(30,'COURSE011','Workplace Safety','An toàn lao động cơ bản',63,15,1,'Beginner',NULL,'Quy định an toàn, phòng tránh tai nạn lao động',12,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(31,'COURSE012','Fire Safety Training','Đào tạo phòng cháy chữa cháy',63,10,1,'Beginner',NULL,'Sử dụng thiết bị PCCC, quy trình thoát hiểm',12,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(32,'COURSE013','Labor Law Compliance','Tuân thủ luật lao động',64,20,1,'Beginner',NULL,'Quyền và nghĩa vụ người lao động, hợp đồng lao động',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(33,'COURSE014','Information Security','An ninh thông tin',64,25,2,'Intermediate',NULL,'Bảo mật dữ liệu, phòng chống tấn công mạng',7,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(34,'COURSE015','Time Management','Quản lý thời gian hiệu quả',61,15,1,'Beginner',NULL,'Ưu tiên công việc, tối ưu năng suất',11,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(35,'COURSE016','Agile & Scrum','Phương pháp Agile và Scrum',60,30,2,'Intermediate',NULL,'Quy trình Scrum, sprint planning, retrospective',8,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
-(36,'COURSE017','Python Programming','Lập trình Python cơ bản',59,45,3,'Beginner',NULL,'Cú pháp Python, xử lý dữ liệu, thư viện phổ biến',9,1,'2025-10-14 00:20:15','2025-10-14 00:20:15');
+INSERT INTO `courses` (`id`, `course_code`, `course_name`, `description`, `category_id`, `duration_hours`, `total_credits`, `theory_credits`, `practice_credits`, `level`, `prerequisite_course_ids`, `concurrent_course_ids`, `learning_objectives`, `created_by`, `is_active`, `created_at`, `updated_at`) VALUES
+(20,'COURSE001','JavaScript Fundamentals','Học các kiến thức cơ bản về JavaScript',59,40,3,2,1,'Beginner',NULL,NULL,'Hiểu cú pháp JavaScript cơ bản, làm việc với DOM, xử lý sự kiện',7,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(21,'COURSE002','React.js Development','Phát triển ứng dụng web với React.js',59,60,4,2,2,'Intermediate','20',NULL,'Xây dựng ứng dụng React, quản lý state, làm việc với hooks',8,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(22,'COURSE003','Node.js Backend','Phát triển backend với Node.js và Express',59,50,3,2,1,'Intermediate','20','21','Tạo RESTful API, làm việc với database, authentication',9,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(23,'COURSE004','DevOps Essentials','Kiến thức cơ bản về DevOps và CI/CD',59,45,3,2,1,'Advanced',NULL,NULL,'Hiểu về Docker, CI/CD pipeline, cloud deployment',7,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(24,'COURSE005','Leadership Skills','Kỹ năng lãnh đạo và quản lý nhóm',60,30,2,2,0,'Intermediate',NULL,NULL,'Phát triển kỹ năng lãnh đạo, quản lý xung đột, động viên nhân viên',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(25,'COURSE006','Project Management','Quản lý dự án hiệu quả',60,40,3,2,1,'Intermediate',NULL,NULL,'Kỹ thuật quản lý dự án, lập kế hoạch, theo dõi tiến độ',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(26,'COURSE007','Communication Skills','Kỹ năng giao tiếp chuyên nghiệp',61,25,2,1,1,'Beginner',NULL,NULL,'Giao tiếp hiệu quả, thuyết trình, viết email chuyên nghiệp',11,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(27,'COURSE008','Teamwork & Collaboration','Làm việc nhóm và hợp tác',61,20,1,0,1,'Beginner',NULL,NULL,'Xây dựng tinh thần đồng đội, giải quyết xung đột',11,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(28,'COURSE009','English for IT','Tiếng Anh chuyên ngành IT',62,50,3,2,1,'Intermediate',NULL,NULL,'Từ vựng IT, đọc tài liệu kỹ thuật, giao tiếp với đồng nghiệp nước ngoài',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(29,'COURSE010','Business English','Tiếng Anh thương mại',62,40,2,2,0,'Intermediate',NULL,NULL,'Email business, đàm phán, presentation',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(30,'COURSE011','Workplace Safety','An toàn lao động cơ bản',63,15,1,1,0,'Beginner',NULL,NULL,'Quy định an toàn, phòng tránh tai nạn lao động',12,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(31,'COURSE012','Fire Safety Training','Đào tạo phòng cháy chữa cháy',63,10,1,0,1,'Beginner',NULL,NULL,'Sử dụng thiết bị PCCC, quy trình thoát hiểm',12,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(32,'COURSE013','Labor Law Compliance','Tuân thủ luật lao động',64,20,1,1,0,'Beginner',NULL,NULL,'Quyền và nghĩa vụ người lao động, hợp đồng lao động',10,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(33,'COURSE014','Information Security','An ninh thông tin',64,25,2,1,1,'Intermediate',NULL,NULL,'Bảo mật dữ liệu, phòng chống tấn công mạng',7,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(34,'COURSE015','Time Management','Quản lý thời gian hiệu quả',61,15,1,1,0,'Beginner',NULL,NULL,'Ưu tiên công việc, tối ưu năng suất',11,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(35,'COURSE016','Agile & Scrum','Phương pháp Agile và Scrum',60,30,2,1,1,'Intermediate','25',NULL,'Quy trình Scrum, sprint planning, retrospective',8,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(36,'COURSE017','Python Programming','Lập trình Python cơ bản',59,45,3,2,1,'Beginner',NULL,NULL,'Cú pháp Python, xử lý dữ liệu, thư viện phổ biến',9,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(37,'COURSE018','Advanced React Patterns','React nâng cao và design patterns',59,50,3,2,1,'Advanced','21,22',NULL,'HOC, Render Props, Context API, Performance optimization',8,1,'2025-10-14 00:20:15','2025-10-14 00:20:15'),
+(38,'COURSE019','Full-Stack Project','Dự án full-stack hoàn chỉnh',59,80,4,1,3,'Advanced','21,22,23','24','Xây dựng ứng dụng full-stack từ A-Z',7,1,'2025-10-14 00:20:15','2025-10-14 00:20:15');
 
 -- Insert majors
 INSERT INTO `majors` (`id`, `major_code`, `major_name`, `description`, `degree_type`, `duration_years`, `total_credits`, `department_id`, `head_of_major_id`, `is_active`, `created_at`, `updated_at`) VALUES

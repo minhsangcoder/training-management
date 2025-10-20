@@ -333,12 +333,19 @@ const Course = sequelize.define("Course", {
   },
   duration_hours: DataTypes.INTEGER,
   total_credits: DataTypes.INTEGER,
+  theory_credits: DataTypes.INTEGER,
+  practice_credits: DataTypes.INTEGER,
   level: {
     type: DataTypes.STRING(50),
     defaultValue: 'Beginner'
   },
   prerequisite_course_ids: DataTypes.TEXT,
+  concurrent_course_ids: DataTypes.TEXT,
   learning_objectives: DataTypes.TEXT,
+  department_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
   created_by: {
     type: DataTypes.INTEGER,
     allowNull: true
@@ -602,6 +609,7 @@ Employee.belongsTo(Position, { foreignKey: 'position_id' });
 
 CourseCategory.hasMany(Course, { foreignKey: 'category_id' });
 Course.belongsTo(CourseCategory, { foreignKey: 'category_id', as: 'CourseCategory' });
+Course.belongsTo(Department, { foreignKey: 'department_id', as: 'Department' });
 Course.belongsTo(Employee, { foreignKey: 'created_by', as: 'CreatedBy' });
 
 Course.hasMany(CourseSession, { foreignKey: 'course_id' });
@@ -852,8 +860,9 @@ app.post("/api/courses", async (req, res) => {
   try {
     let {
       course_code, course_name, description, category_id,
-      duration_hours, credits, level, prerequisites,
-      learning_objectives, created_by, is_active = true
+      duration_hours, total_credits, theory_credits, practice_credits, level, 
+      prerequisite_course_ids, concurrent_course_ids, learning_objectives, 
+      department_id, created_by, is_active = true
     } = req.body;
 
     if (!course_code || !course_name) {
@@ -862,6 +871,7 @@ app.post("/api/courses", async (req, res) => {
 
     // Nếu frontend gửi "" thì convert thành null
     if (category_id === "" || category_id === undefined) category_id = null;
+    if (department_id === "" || department_id === undefined) department_id = null;
     if (created_by === "" || created_by === undefined) created_by = null;
 
     const course = await Course.create({
@@ -870,10 +880,14 @@ app.post("/api/courses", async (req, res) => {
       description,
       category_id,
       duration_hours,
-      credits,
+      total_credits,
+      theory_credits,
+      practice_credits,
       level,
-      prerequisites,
+      prerequisite_course_ids,
+      concurrent_course_ids,
       learning_objectives,
+      department_id,
       created_by,
       is_active
     });
@@ -890,6 +904,7 @@ app.get("/api/courses", async (req, res) => {
     const courses = await Course.findAll({
       include: [
         { model: CourseCategory, as: "CourseCategory", required: false, attributes: ["id", "category_name"] },
+        { model: Department, as: "Department", required: false, attributes: ["id", "department_name"] },
         { model: Employee, as: "CreatedBy", required: false, attributes: ["id", "first_name", "last_name"] }
       ],
       order: [["created_at", "DESC"]]
@@ -914,10 +929,14 @@ app.put("/api/courses/:id", async (req, res) => {
       "description",
       "category_id",
       "duration_hours",
-      "credits",
+      "total_credits",
+      "theory_credits",
+      "practice_credits",
       "level",
-      "prerequisites",
+      "prerequisite_course_ids",
+      "concurrent_course_ids",
       "learning_objectives",
+      "department_id",
       "is_active"
     ];
 

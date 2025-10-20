@@ -281,7 +281,7 @@ const MajorManagement = () => {
 
       {/* Table */}
       {!loading && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="bg-white shadow sm:rounded-md overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -293,7 +293,7 @@ const MajorManagement = () => {
                 <th className="table-header">Khoa/Bộ môn</th>
                 <th className="table-header">Trưởng ngành</th>
                 <th className="table-header">Trạng thái</th>
-                <th className="table-header">Thao tác</th>
+                <th className="table-header w-28">Thao tác</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -357,8 +357,8 @@ const MajorManagement = () => {
                       {getStatusText(major.is_active)}
                     </span>
                   </td>
-                  <td className="table-cell">
-                    <div className="flex space-x-2">
+                  <td className="table-cell whitespace-nowrap">
+                    <div className="flex space-x-2 justify-start">
                       <button
                         onClick={() => handleEdit(major)}
                         className="text-blue-600 hover:text-blue-900"
