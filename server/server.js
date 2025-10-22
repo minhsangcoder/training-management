@@ -46,6 +46,7 @@ const sequelize = new Sequelize("training_management", "root", "123456", {
     connectTimeout: 60000,    // timeout connect 60s
   },
   logging: (msg) => console.log(`[DB] ${msg}`),
+  logging: console.log,
   pool: {
     max: 5,
     min: 0,
@@ -53,10 +54,6 @@ const sequelize = new Sequelize("training_management", "root", "123456", {
     idle: 10000,
   }
 });
-
-
-
-
 
 // Test database connection
 async function testConnection() {
@@ -69,8 +66,6 @@ async function testConnection() {
     // const [results] = await sequelize.query("DESCRIBE course_categories;");
     // console.log("📋 [DB] Fields in table course_categories:");
     // console.table(results);
-
-
 
     return true;
   } catch (error) {
@@ -532,6 +527,15 @@ const KnowledgeBlock = sequelize.define("KnowledgeBlock", {
 });
 
 const CurriculumStructure = sequelize.define("CurriculumStructure", {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  program_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
   major_id: {
     type: DataTypes.INTEGER,
     allowNull: false
@@ -596,8 +600,10 @@ const Program = sequelize.define("Program", {
 });
 
 // =======================
-// Associations
+// Associations (FIXED)
 // =======================
+
+// Department – Position – Employee
 Department.hasMany(Position, { foreignKey: 'department_id' });
 Position.belongsTo(Department, { foreignKey: 'department_id' });
 
@@ -607,6 +613,7 @@ Employee.belongsTo(Department, { foreignKey: 'department_id' });
 Position.hasMany(Employee, { foreignKey: 'position_id' });
 Employee.belongsTo(Position, { foreignKey: 'position_id' });
 
+// Course relations
 CourseCategory.hasMany(Course, { foreignKey: 'category_id' });
 Course.belongsTo(CourseCategory, { foreignKey: 'category_id', as: 'CourseCategory' });
 Course.belongsTo(Department, { foreignKey: 'department_id', as: 'Department' });
@@ -621,27 +628,44 @@ Enrollment.belongsTo(Employee, { foreignKey: 'employee_id' });
 CourseSession.hasMany(Enrollment, { foreignKey: 'course_session_id' });
 Enrollment.belongsTo(CourseSession, { foreignKey: 'course_session_id' });
 
+// Program – Cohort – Employee
 Program.hasMany(Cohort, { foreignKey: 'program_id' });
 Cohort.belongsTo(Program, { foreignKey: 'program_id', as: 'Program' });
 
 Employee.hasMany(Cohort, { foreignKey: 'instructor_id' });
 Cohort.belongsTo(Employee, { foreignKey: 'instructor_id', as: 'Instructor' });
 
+Program.belongsToMany(KnowledgeBlock, { through: 'program_knowledge_blocks', foreignKey: 'program_id', otherKey: 'knowledge_block_id' });
+KnowledgeBlock.belongsToMany(Program, { through: 'program_knowledge_blocks', foreignKey: 'knowledge_block_id', otherKey: 'program_id' });
+
+// Department – Major – Employee
 Department.hasMany(Major, { foreignKey: 'department_id' });
 Major.belongsTo(Department, { foreignKey: 'department_id', as: 'Department' });
 
 Employee.hasMany(Major, { foreignKey: 'head_of_major_id' });
 Major.belongsTo(Employee, { foreignKey: 'head_of_major_id', as: 'HeadOfMajor' });
 
-Major.hasMany(KnowledgeBlock, { foreignKey: 'major_id' });
+// Major – KnowledgeBlock
+Major.hasMany(KnowledgeBlock, { foreignKey: 'major_id', as: 'KnowledgeBlocks' });
 KnowledgeBlock.belongsTo(Major, { foreignKey: 'major_id', as: 'Major' });
 
-Major.hasMany(CurriculumStructure, { foreignKey: 'major_id' });
+// ✅ Program – CurriculumStructure
+Program.hasMany(CurriculumStructure, { foreignKey: 'program_id', as: 'CurriculumStructures' });
+CurriculumStructure.belongsTo(Program, { foreignKey: 'program_id', as: 'Program' });
+
+// ✅ Major – CurriculumStructure
+Major.hasMany(CurriculumStructure, { foreignKey: 'major_id', as: 'CurriculumStructures' });
 CurriculumStructure.belongsTo(Major, { foreignKey: 'major_id', as: 'Major' });
 
-KnowledgeBlock.hasMany(CurriculumStructure, { foreignKey: 'knowledge_block_id' });
+// ✅ KnowledgeBlock – CurriculumStructure
+KnowledgeBlock.hasMany(CurriculumStructure, { foreignKey: 'knowledge_block_id', as: 'CurriculumStructures' });
 CurriculumStructure.belongsTo(KnowledgeBlock, { foreignKey: 'knowledge_block_id', as: 'KnowledgeBlock' });
 
+CurriculumStructure.associate = (models) => {
+  CurriculumStructure.belongsTo(models.Program, { foreignKey: 'program_id' });
+  CurriculumStructure.belongsTo(models.Major, { foreignKey: 'major_id' });
+  CurriculumStructure.belongsTo(models.KnowledgeBlock, { foreignKey: 'knowledge_block_id' });
+};
 // =======================
 // Helper function to handle errors
 // =======================
@@ -860,8 +884,8 @@ app.post("/api/courses", async (req, res) => {
   try {
     let {
       course_code, course_name, description, category_id,
-      duration_hours, total_credits, theory_credits, practice_credits, level, 
-      prerequisite_course_ids, concurrent_course_ids, learning_objectives, 
+      duration_hours, total_credits, theory_credits, practice_credits, level,
+      prerequisite_course_ids, concurrent_course_ids, learning_objectives,
       department_id, created_by, is_active = true
     } = req.body;
 
@@ -1350,7 +1374,13 @@ app.delete("/api/majors/:id", async (req, res) => {
 app.get("/api/programs", async (req, res) => {
   try {
     const programs = await Program.findAll({
-      order: [["created_at", "DESC"]]
+      include: [
+        {
+          model: KnowledgeBlock,
+          attributes: ["id", "block_code", "block_name", "total_credits", "is_required", "is_active"],
+        },
+      ],
+      order: [["created_at", "DESC"]],
     });
     res.json(programs);
   } catch (error) {
@@ -1360,7 +1390,14 @@ app.get("/api/programs", async (req, res) => {
 
 app.get("/api/programs/:id", async (req, res) => {
   try {
-    const program = await Program.findByPk(req.params.id);
+    const program = await Program.findByPk(req.params.id, {
+      include: [
+        {
+          model: KnowledgeBlock,
+          attributes: ["id", "block_code", "block_name", "total_credits", "is_required", "is_active"],
+        },
+      ],
+    });
     if (!program) {
       return res.status(404).json({ error: "Không tìm thấy chương trình" });
     }
@@ -1372,7 +1409,7 @@ app.get("/api/programs/:id", async (req, res) => {
 
 app.post("/api/programs", async (req, res) => {
   try {
-    const { program_code, program_name, description, start_date, end_date, is_active = true } = req.body;
+    const { program_code, program_name, description, start_date, end_date, is_active = true, knowledge_block_ids } = req.body;
 
     if (!program_code || !program_name) {
       return res.status(400).json({ error: "Mã chương trình và tên chương trình là bắt buộc" });
@@ -1386,6 +1423,11 @@ app.post("/api/programs", async (req, res) => {
       end_date: end_date === '' ? null : end_date,
       is_active
     });
+
+    // Link knowledge blocks if provided
+    if (Array.isArray(knowledge_block_ids) && knowledge_block_ids.length > 0) {
+      await program.setKnowledgeBlocks(knowledge_block_ids);
+    }
 
     res.status(201).json(program);
   } catch (error) {
@@ -1406,6 +1448,12 @@ app.put("/api/programs/:id", async (req, res) => {
     if (updateData.end_date === '') updateData.end_date = null;
 
     await program.update(updateData);
+
+    // Link knowledge blocks if provided
+    if (Array.isArray(req.body.knowledge_block_ids)) {
+      await program.setKnowledgeBlocks(req.body.knowledge_block_ids);
+    }
+
     res.json(program);
   } catch (error) {
     handleError(res, error, "Không thể cập nhật chương trình");
@@ -1556,6 +1604,43 @@ app.delete("/api/cohorts/:id", async (req, res) => {
   }
 });
 
+// =======================
+// API: Curriculum Viewer (FIXED)
+// =======================
+app.get("/api/curriculum-viewer/full", async (req, res) => {
+  try {
+    // Get all programs with their linked knowledge blocks and each block's courses
+    const programs = await Program.findAll({
+      include: [
+        {
+          model: KnowledgeBlock,
+          through: { attributes: [] }, // hide join table
+          attributes: ["id", "block_code", "block_name", "total_credits"],
+          include: [
+            {
+              model: Course,
+              as: "Courses",
+              attributes: ["id", "course_code", "course_name", "total_credits", "duration_hours", "level"]
+            }
+          ]
+        }
+      ],
+      order: [["created_at", "DESC"]],
+    });
+    if (!programs.length) {
+      return res.status(404).json({ message: "Không có chương trình đào tạo nào." });
+    }
+    res.json({
+      success: true,
+      count: programs.length,
+      data: programs,
+    });
+  } catch (error) {
+    console.error("❌ Curriculum Viewer API Error:", error);
+    res.status(500).json({ message: "Không thể tải dữ liệu hiển thị CTĐT", error: error.message });
+  }
+});
+
 // ---- Dashboard ----
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
@@ -1599,8 +1684,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
 // Initialize and start server
 // =======================
 async function initializeServer() {
-  // Test database connection
-  console.log("[SERVER] Initializing server...")
+  console.log("[SERVER] Initializing server...");
   const isConnected = await testConnection();
   if (!isConnected) {
     console.error("❌ [SERVER] Cannot start server due to database connection failure");
@@ -1608,21 +1692,15 @@ async function initializeServer() {
   }
 
   try {
-    // Sync database tables (this will create tables based on Sequelize models)
     console.log("[DB] Syncing database tables...");
-    await sequelize.sync(); // { force: true } to drop & recreate tables
+    await sequelize.sync(); // Nếu cần làm sạch, dùng { force: true }
     console.log("✅ [DB] Database tables synced successfully");
 
-    // Load sample data if tables are empty
     await loadSampleData();
 
-    // Start server
     app.listen(PORT, () => {
       const timestamp = new Date().toISOString();
-      console.log(`[${timestamp}] 🚀 [SERVER] Server started successfully`);
-      console.log(`[${timestamp}] 📍 [SERVER] Running at http://localhost:${PORT}`);
-      console.log(`[${timestamp}] 📊 [API] Endpoints available at http://localhost:${PORT}/api/`);
-      console.log(`[${timestamp}] 🔧 [HEALTH] Health check: http://localhost:${PORT}/api/health`);
+      console.log(`[${timestamp}] 🚀 Server started successfully at http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error("❌ [SERVER] Server startup failed:", error.message);
@@ -1630,5 +1708,4 @@ async function initializeServer() {
   }
 }
 
-// Start the server
 initializeServer();

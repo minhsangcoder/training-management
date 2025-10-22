@@ -672,4 +672,52 @@ export const healthAPI = {
   }
 }
 
+// CURRICULUM VIEWER API (Hiển thị CTĐT)
+export const curriculumViewerAPI = {
+  // Lấy toàn bộ CTĐT kèm cấu trúc, khối kiến thức, học phần
+  getFullStructure: async () => {
+    try {
+      const response = await api.get('/curriculum-viewer/full')
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || 'Không thể tải dữ liệu CTĐT'
+      )
+    }
+  },
+
+  // Lấy chi tiết CTĐT theo mã chương trình
+  getByProgramId: async (programId) => {
+    try {
+      const response = await api.get(`/curriculum-viewer/program/${programId}`)
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || 'Không thể tải chi tiết CTĐT'
+      )
+    }
+  },
+
+  // Lấy học phần thuộc khối kiến thức cụ thể
+  getCoursesByBlockId: async (blockId) => {
+    try {
+      const response = await api.get(`/curriculum-viewer/block/${blockId}`)
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || 'Không thể tải học phần theo khối kiến thức'
+      )
+    }
+  }
+}
+
 export default api

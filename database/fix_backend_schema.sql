@@ -88,3 +88,16 @@ CREATE TABLE IF NOT EXISTS curriculum_structures (
   CONSTRAINT curriculum_structures_ibfk_1 FOREIGN KEY (major_id) REFERENCES majors (id) ON DELETE CASCADE,
   CONSTRAINT curriculum_structures_ibfk_2 FOREIGN KEY (knowledge_block_id) REFERENCES knowledge_blocks (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `program_knowledge_blocks` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `program_id` INT NOT NULL,
+  `knowledge_block_id` INT NOT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `program_id` (`program_id`),
+  KEY `knowledge_block_id` (`knowledge_block_id`),
+  CONSTRAINT `pkb_program_fk` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `pkb_kb_fk` FOREIGN KEY (`knowledge_block_id`) REFERENCES `knowledge_blocks` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

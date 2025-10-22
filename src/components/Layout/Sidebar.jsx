@@ -9,7 +9,8 @@ import {
   ClipboardList,
   Settings,
   Users,
-  ChevronRight
+  ChevronRight,
+  Eye
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onToggle }) => {
@@ -28,6 +29,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
     { path: '/knowledge-blocks', label: 'Quản lý khối kiến thức', icon: GitBranch },
     { path: '/curriculum-structure', label: 'Quản lý cấu trúc CTĐT', icon: BookOpen },
     { path: '/programs', label: 'Quản lý chương trình', icon: ClipboardList },
+    { path: '/curriculum-viewer', label: 'Hiển thị CTĐT', icon: Eye },
   ]
 
   // Quản lý hệ thống (chỉ giữ cơ cấu tổ chức & nhân viên)

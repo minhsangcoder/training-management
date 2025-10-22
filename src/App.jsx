@@ -11,6 +11,7 @@ import MajorManagement from '@/pages/MajorManagement'
 import KnowledgeBlockManagement from '@/pages/KnowledgeBlockManagement'
 import CurriculumStructureManagement from '@/pages/CurriculumStructureManagement'
 import ProgramManagement from '@/pages/ProgramManagement'
+import CurriculumViewer from '@/pages/CurriculumViewer'
 
 function App() {
   return (
@@ -28,7 +29,7 @@ function App() {
             <Route path="programs" element={<ProgramManagement />} />
             <Route path="departments" element={<DepartmentManagement />} />
             <Route path="employees" element={<EmployeeManagement />} />
-
+            <Route path="curriculum-viewer" element={<CurriculumViewer />} />
           </Route>
         </Routes>
         <Toaster position="top-right" />
